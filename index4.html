@@ -269,7 +269,7 @@
     // ==========================================
     let currentQuarter = 1;
     let selectedPlayerId = null;
-    let statHistory = []; // For Undo stack
+    let statHistory = [];
 
     const baseStats = ["K", "H", "M", "T"];
     const popoutBaseStats = ["KICK", "HANDBALL", "MARK", "TACKLE"];
@@ -282,7 +282,6 @@
       away: ["#0d6efd", "#dc3545"]
     };
 
-    // Default 21 players
     let players = Array.from({ length: 21 }, (_, i) => ({
       id: i + 1,
       number: i + 1,
@@ -419,14 +418,11 @@
       if (!player.stats[qKey][statKey]) player.stats[qKey][statKey] = 0;
       player.stats[qKey][statKey]++;
 
-      // Push to Undo stack
       statHistory.push({ playerId, quarter: currentQuarter, statKey });
 
-      // Audio/Haptic Feedback
       playTone('success');
       triggerHaptic('success');
 
-      // Update UI
       renderPlayerButtons();
       pushVoiceFeed(`${player.name} — ${statKey}`);
     }
@@ -466,44 +462,63 @@
         parseVoiceInput(transcript);
       };
 
-      recognition.onerror = () => handleVoiceError("Speech error");
+      recognition.onerror = (e) => {
+        updatePTTState(false);
+        if (e.error === 'not-allowed') {
+          handleVoiceError("Mic permission blocked (Requires HTTPS)");
+        } else {
+          handleVoiceError(`Speech error (${e.error || 'unknown'})`);
+        }
+      };
+
       recognition.onend = () => updatePTTState(false);
     }
 
     const pttBtn = document.getElementById('ptt-btn');
     if (pttBtn && recognition) {
-      pttBtn.addEventListener('pointerdown', (e) => {
+      const startListening = (e) => {
         e.preventDefault();
         if (audioCtx.state === 'suspended') audioCtx.resume();
         try {
           recognition.start();
           updatePTTState(true);
         } catch(err){}
-      });
-      pttBtn.addEventListener('pointerup', () => recognition.stop());
-      pttBtn.addEventListener('pointerleave', () => recognition.stop());
+      };
+
+      const stopListening = (e) => {
+        e.preventDefault();
+        try {
+          recognition.stop();
+        } catch(err){}
+        updatePTTState(false);
+      };
+
+      pttBtn.addEventListener('pointerdown', startListening);
+      pttBtn.addEventListener('pointerup', stopListening);
+      pttBtn.addEventListener('pointerleave', stopListening);
+      pttBtn.addEventListener('pointercancel', stopListening);
     }
 
     function updatePTTState(isListening) {
+      const btn = document.getElementById('ptt-btn');
+      if (!btn) return;
       if (isListening) {
-        pttBtn.classList.add('listening');
-        pttBtn.innerText = 'LISTENING...';
+        btn.classList.add('listening');
+        btn.innerText = 'LISTENING...';
       } else {
-        pttBtn.classList.remove('listening');
-        pttBtn.innerText = 'HOLD TO SPEAK';
+        btn.classList.remove('listening');
+        btn.innerText = 'HOLD TO SPEAK';
       }
     }
 
     function parseVoiceInput(text) {
       const clean = text.toLowerCase().trim();
 
-      // Check for spoken undo
       if (clean.includes('undo')) {
         undoLastStat();
         return;
       }
 
-      // Longest-Name-First matching
       const sortedRoster = [...players].sort((a,b) => b.name.length - a.name.length);
       let matchedPlayer = null;
 
@@ -516,7 +531,6 @@
 
       let matchedStat = null;
       
-      // Spoken synonyms mapping to base stat shorthand
       const spokenStatMap = [
         { keywords: ["handball", "handpass", "hands"], statKey: "H" },
         { keywords: ["kick"], statKey: "K" },
@@ -524,7 +538,6 @@
         { keywords: ["tackle"], statKey: "T" }
       ];
 
-      // 1. Check base stat triggers
       for (const group of spokenStatMap) {
         if (group.keywords.some(kw => clean.includes(kw))) {
           matchedStat = group.statKey;
@@ -532,7 +545,6 @@
         }
       }
 
-      // 2. Check custom stat labels
       if (!matchedStat) {
         for (const cStat of customStats) {
           if (clean.includes(cStat.toLowerCase())) {
@@ -567,12 +579,10 @@
     // SETUP & EDIT MODAL
     // ==========================================
     function openSetup() {
-      // Load custom stats
       customStats.forEach((st, idx) => {
         document.getElementById(`custom-stat-${idx}`).value = st;
       });
 
-      // Load team colors
       document.getElementById('home-c1').value = teamColors.home[0];
       document.getElementById('home-c2').value = teamColors.home[1];
       document.getElementById('away-c1').value = teamColors.away[0];
@@ -652,9 +662,9 @@
       const table = document.getElementById('summary-table');
       const allStatsToDisplay = [...baseStats, ...customStats];
 
-      let html = `<thead><tr><th>#</th><th>Player</th><th>Disp</th>`;
-      allStatsToDisplay.forEach(s => html += `<th>${s}</th>`);
-      html += `</tr></thead><tbody>`;
+      let html = '<thead><tr><th>#</th><th>Player</th><th>Disp</th>';
+      allStatsToDisplay.forEach(s => html += '<th>' + s + '</th>');
+      html += '</tr></thead><tbody>';
 
       const teams = ['home', 'away'];
 
@@ -683,30 +693,24 @@
           teamTotH += totH;
           allStatsToDisplay.forEach(s => teamStatTotals[s] += statTotals[s]);
 
-          html += `<tr>
-            <td>${p.number}</td>
-            <td style="text-align:left;">${p.name}</td>
-            <td><strong>${disposals}</strong></td>`;
-          allStatsToDisplay.forEach(s => html += `<td>${statTotals[s]}</td>`);
-          html += `</tr>`;
+          html += '<tr><td>' + p.number + '</td><td style="text-align:left;">' + p.name + '</td><td><strong>' + disposals + '</strong></td>';
+          allStatsToDisplay.forEach(s => html += '<td>' + statTotals[s] + '</td>');
+          html += '</tr>';
         });
 
-        // Team Subtotal Row
         const teamDisposals = teamTotK + teamTotH;
-        html += `<tr class="team-total-row">
-          <td colspan="2" style="text-align:left;">TOTAL (${tKey.toUpperCase()})</td>
-          <td>${teamDisposals}</td>`;
-        allStatsToDisplay.forEach(s => html += `<td>${teamStatTotals[s]}</td>`);
-        html += `</tr>`;
+        html += '<tr class="team-total-row"><td colspan="2" style="text-align:left;">TOTAL (' + tKey.toUpperCase() + ')</td><td>' + teamDisposals + '</td>';
+        allStatsToDisplay.forEach(s => html += '<td>' + teamStatTotals[s] + '</td>');
+        html += '</tr>';
       });
 
-      html += `</tbody>`;
+      html += '</tbody>';
       table.innerHTML = html;
     }
 
     function exportCSV() {
       const allStatsToDisplay = [...baseStats, ...customStats];
-      let csv = `Number,Name,Team,Disposals,` + allStatsToDisplay.join(',') + `\n`;
+      let csv = "Number,Name,Team,Disposals," + allStatsToDisplay.join(",") + "\n";
 
       players.forEach(p => {
         let totK = 0, totH = 0;
@@ -721,14 +725,14 @@
         });
 
         const disposals = totK + totH;
-        csv += `${p.number},"${p.name}",${p.team},${disposals},` + allStatsToDisplay.map(s => statTotals[s]).join(',') + `\n`;
+        csv += p.number + ',"' + p.name + '",' + p.team + ',' + disposals + ',' + allStatsToDisplay.map(s => statTotals[s]).join(",") + "\n";
       });
 
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `VoiceStatz_Export.csv`;
+      a.download = "VoiceStatz_Export.csv";
       a.click();
     }
 

@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VoiceStatz</title>
+  
+  <!-- iOS Standalone Web App Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VoiceStatz">
+
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --accent-blue: #0d6efd;
+      --accent-green: #198754;
+      --accent-red: #dc3545;
+      --text-light: #f8f9fa;
+      --border-color: #333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding-bottom: 20px; overflow-x: hidden; }
+
+    /* Header Nav */
+    header { background: #000; padding: 12px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border-color); }
+    header h1 { font-size: 1.2rem; font-weight: 800; color: #fff; }
+    .btn-header { background: #333; color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; }
+    .btn-header.primary { background: var(--accent-blue); border-color: var(--accent-blue); }
+
+    /* Quarter Selector */
+    .quarter-bar { display: flex; justify-content: space-around; background: #181818; padding: 8px; border-bottom: 1px solid var(--border-color); align-items: center; }
+    .q-btn { flex: 1; margin: 0 4px; padding: 8px; background: #2a2a2a; color: #aaa; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; }
+    .q-btn.active { background: var(--accent-blue); color: #fff; }
+
+    /* Main Container Views */
+    .view-page { display: none; padding: 12px; }
+    .view-page.active { display: block; }
+
+    /* Player Button Cards Split 50/50 */
+    .player-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .player-card {
+      display: flex; height: 50px; border-radius: 8px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-weight: bold;
+    }
+    .player-card-left {
+      width: 50%; display: flex; align-items: center; padding: 0 10px; gap: 8px;
+      color: #fff; text-shadow: 1px 1px 2px #000; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .player-card-right {
+      width: 50%; display: flex; align-items: center; justify-content: center; padding: 0 10px;
+      color: #fff; text-shadow: 1px 1px 2px #000; font-size: 0.85rem; letter-spacing: 0.5px;
+    }
+    .player-num { background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; min-width: 26px; text-align: center; }
+
+    /* Pop-out Stat Drawer Modal */
+    .popout-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+    .popout-overlay.active { display: flex; }
+    .popout-content { background: var(--card-bg); width: 100%; max-width: 360px; border-radius: 12px; padding: 16px; border: 1px solid #444; }
+    .popout-header { text-align: center; font-size: 1.2rem; margin-bottom: 15px; font-weight: bold; }
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-btn { background: #2c2c2c; color: #fff; border: 1px solid #444; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    .stat-btn:active { background: var(--accent-blue); }
+
+    /* Voice Page Specifics */
+    .voice-feed-container { height: 220px; display: flex; flex-direction: column-reverse; justify-content: flex-start; align-items: center; gap: 12px; margin: 20px 0; overflow: hidden; }
+    .feed-item {
+      background: #252525; border: 2px solid var(--accent-blue); border-radius: 10px; padding: 12px 20px; text-align: center;
+      transition: all 0.3s ease; animation: slideUp 0.3s ease-out;
+    }
+    .feed-item:nth-child(1) { font-size: 1.3rem; font-weight: bold; opacity: 1; transform: scale(1); border-color: var(--accent-green); }
+    .feed-item:nth-child(2) { font-size: 0.95rem; opacity: 0.7; transform: scale(0.9); }
+    .feed-item:nth-child(3) { font-size: 0.8rem; opacity: 0.4; transform: scale(0.8); }
+    .feed-item:nth-child(n+4) { display: none; }
+    
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; } }
+
+    .voice-controls-container { position: fixed; bottom: 15px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 10px; }
+    
+    /* Standardised Undo Button */
+    .undo-btn-standard {
+      width: 100%; height: 48px; background: #444; color: #fff; font-size: 1.1rem; font-weight: bold;
+      border: 1px solid #666; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer;
+    }
+
+    .floating-undo-container {
+      position: fixed; bottom: 15px; left: 12px; right: 12px; z-index: 150;
+    }
+
+    .ptt-btn {
+      width: 100%; height: 90px; background: var(--accent-blue); color: #fff; font-size: 1.4rem; font-weight: 900;
+      border: none; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); touch-action: manipulation;
+    }
+    .ptt-btn.listening { background: var(--accent-red); animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+    /* Edit Modal & Setup */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: #121212; z-index: 300; overflow-y: auto; padding: 16px; }
+    .modal-overlay.active { display: block; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 4px; }
+    .form-control { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.95rem; }
+    
+    /* Color Input Swatch Styling */
+    .color-swatch-input {
+      -webkit-appearance: none; border: 1px solid #555; border-radius: 6px; height: 38px; cursor: pointer; padding: 0;
+    }
+    .color-swatch-input::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-swatch-input::-webkit-color-swatch { border: none; border-radius: 5px; }
+
+    .roster-row { display: grid; grid-template-columns: 50px 1fr 80px; gap: 6px; margin-bottom: 8px; align-items: center; }
+    .team-select-btn { font-weight: bold; text-shadow: 1px 1px 2px #000; border: 1px solid rgba(255,255,255,0.3); }
+
+    /* Summary Table */
+    .table-responsive { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; }
+    th, td { border: 1px solid #333; padding: 6px 4px; }
+    th { background: #222; color: #007bff; }
+    tr:nth-child(even) { background: #181818; }
+    tr.team-total-row { background: #2a2a2a; font-weight: bold; color: var(--text-light); }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1: MANUAL / PLAYERS VIEW -->
+  <div id="page-players" class="view-page active">
+    <header>
+      <h1>VoiceStatz</h1>
+      <div>
+        <button class="btn-header primary" onclick="switchPage('page-voice')">Voice Mode</button>
+        <button class="btn-header" onclick="openSetup()">Edit</button>
+      </div>
+    </header>
+
+    <div class="quarter-bar">
+      <button class="q-btn active" onclick="setQuarter(1)">Q1</button>
+      <button class="q-btn" onclick="setQuarter(2)">Q2</button>
+      <button class="q-btn" onclick="setQuarter(3)">Q3</button>
+      <button class="q-btn" onclick="setQuarter(4)">Q4</button>
+    </div>
+
+    <div class="player-list" id="player-buttons-container">
+      <!-- Player buttons injected dynamically -->
+    </div>
+
+    <div style="margin-top: 20px; margin-bottom: 90px; text-align: center; padding: 0 4px;">
+      <button class="btn-header primary" style="width:100%; padding: 12px; font-size: 1rem;" onclick="switchPage('page-summary')">Summary & Export</button>
+    </div>
+
+    <!-- Floating Undo Container -->
+    <div class="floating-undo-container">
+      <button class="undo-btn-standard" onclick="undoLastStat()">↩ UNDO LAST STAT</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: VOICE ENTRY VIEW -->
+  <div id="page-voice" class="view-page">
+    <header>
+      <button class="btn-header" onclick="switchPage('page-players')">← Players/Manual</button>
+      <button class="btn-header" onclick="openSetup()">Edit</button>
+    </header>
+
+    <div class="quarter-bar">
+      <button class="q-btn active" onclick="setQuarter(1)">Q1</button>
+      <button class="q-btn" onclick="setQuarter(2)">Q2</button>
+      <button class="q-btn" onclick="setQuarter(3)">Q3</button>
+      <button class="q-btn" onclick="setQuarter(4)">Q4</button>
+    </div>
+
+    <div class="voice-feed-container" id="voice-feed">
+      <div class="feed-item" style="border-color:#555;">Ready — Hold button to speak</div>
+    </div>
+
+    <div class="voice-controls-container">
+      <button class="undo-btn-standard" onclick="undoLastStat()">↩ UNDO LAST STAT</button>
+      <button id="ptt-btn" class="ptt-btn">HOLD TO SPEAK</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3: SUMMARY & EXPORT VIEW -->
+  <div id="page-summary" class="view-page">
+    <header>
+      <h1>Match Summary</h1>
+      <div>
+        <button class="btn-header" onclick="switchPage('page-players')">Manual</button>
+        <button class="btn-header" onclick="switchPage('page-voice')">Voice</button>
+        <button class="btn-header" onclick="openSetup()">Setup</button>
+      </div>
+    </header>
+
+    <div style="display:flex; gap:10px; margin: 12px 0;">
+      <button class="btn-header primary" style="flex:1;" onclick="exportCSV()">Export CSV</button>
+      <button class="btn-header" style="background:var(--accent-red); border-color:var(--accent-red);" onclick="resetDataPrompt()">Reset Data</button>
+    </div>
+
+    <div class="table-responsive">
+      <table id="summary-table">
+        <!-- Rendered dynamically -->
+      </table>
+    </div>
+  </div>
+
+  <!-- MANUAL STAT POPOUT DRAWER -->
+  <div id="popout-modal" class="popout-overlay" onclick="closePopout(event)">
+    <div class="popout-content">
+      <div class="popout-header" id="popout-player-title">Player Name</div>
+      <div class="stat-grid" id="popout-stat-grid">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP / EDIT MODAL -->
+  <div id="setup-modal" class="modal-overlay">
+    <header style="margin-bottom:15px; padding:0; background:transparent; border:none;">
+      <h2>App & Roster Setup</h2>
+      <button class="btn-header primary" onclick="closeSetup()">Done</button>
+    </header>
+
+    <div class="form-group">
+      <label>Custom Stat Labels (Tip: Type exactly what you will speak)</label>
+      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+        <input type="text" id="custom-stat-0" class="form-control" value="TURNOVER">
+        <input type="text" id="custom-stat-1" class="form-control" value="CLEARANCE">
+        <input type="text" id="custom-stat-2" class="form-control" value="SHOT">
+        <input type="text" id="custom-stat-3" class="form-control" value="SPOIL">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Team Colours (2 Colours per team)</label>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div>
+          <span style="font-size:0.8rem;">Home Team</span>
+          <div style="display:flex; gap:6px; margin-top:4px;">
+            <input type="color" id="home-c1" class="form-control color-swatch-input" value="#198754" onchange="updateSetupColorPreviews()">
+            <input type="color" id="home-c2" class="form-control color-swatch-input" value="#000000" onchange="updateSetupColorPreviews()">
+          </div>
+        </div>
+        <div>
+          <span style="font-size:0.8rem;">Away Team</span>
+          <div style="display:flex; gap:6px; margin-top:4px;">
+            <input type="color" id="away-c1" class="form-control color-swatch-input" value="#0d6efd" onchange="updateSetupColorPreviews()">
+            <input type="color" id="away-c2" class="form-control color-swatch-input" value="#dc3545" onchange="updateSetupColorPreviews()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Roster (Num | Player Name / Voice Identifier | Team)</label>
+      <div id="roster-editor-list">
+        <!-- Roster rows generated dynamically -->
+      </div>
+      <button class="btn-header" style="width:100%; margin-top:10px;" onclick="addRosterRow()">+ Add Player</button>
+    </div>
+
+    <div style="margin-top:20px;">
+      <button class="btn-header primary" style="width:100%; padding:12px; font-size:1rem;" onclick="closeSetup()">Done</button>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // DATA STRUCTURES & GLOBAL STATE
+    // ==========================================
+    let currentQuarter = 1;
+    let selectedPlayerId = null;
+    let statHistory = []; // For Undo stack
+
+    const baseStats = ["K", "H", "M", "T"];
+    const popoutBaseStats = ["KICK", "HANDBALL", "MARK", "TACKLE"];
+    const statKeyMap = { "KICK": "K", "HANDBALL": "H", "MARK": "M", "TACKLE": "T" };
+
+    let customStats = ["TURNOVER", "CLEARANCE", "SHOT", "SPOIL"];
+
+    let teamColors = {
+      home: ["#198754", "#000000"],
+      away: ["#0d6efd", "#dc3545"]
+    };
+
+    // Default 21 players
+    let players = Array.from({ length: 21 }, (_, i) => ({
+      id: i + 1,
+      number: i + 1,
+      name: `Player ${i + 1}`,
+      team: 'home',
+      stats: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
+    }));
+
+    // ==========================================
+    // AUDIO SYNTH & HAPTIC FEEDBACK
+    // ==========================================
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(type) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'success') {
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      } else {
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+      }
+    }
+
+    function triggerHaptic(type) {
+      if (navigator.vibrate) {
+        if (type === 'success') navigator.vibrate(80);
+        else navigator.vibrate([100, 50, 100]);
+      }
+    }
+
+    // ==========================================
+    // NAVIGATION & QUARTER SELECTOR
+    // ==========================================
+    function switchPage(pageId) {
+      document.querySelectorAll('.view-page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      if (pageId === 'page-summary') renderSummaryTable();
+    }
+
+    function setQuarter(q) {
+      currentQuarter = q;
+      document.querySelectorAll('.quarter-bar').forEach(bar => {
+        const btns = bar.querySelectorAll('.q-btn');
+        btns.forEach((btn, idx) => {
+          if (idx + 1 === q) btn.classList.add('active');
+          else btn.classList.remove('active');
+        });
+      });
+      renderPlayerButtons();
+    }
+
+    // ==========================================
+    // MANUAL PLAYER BUTTONS & DRAWER
+    // ==========================================
+    function renderPlayerButtons() {
+      const container = document.getElementById('player-buttons-container');
+      container.innerHTML = '';
+
+      players.forEach(p => {
+        const qStats = p.stats[`Q${currentQuarter}`] || {};
+        const k = qStats.K || 0;
+        const h = qStats.H || 0;
+        const m = qStats.M || 0;
+        const t = qStats.T || 0;
+
+        const colors = teamColors[p.team] || teamColors.home;
+
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        card.onclick = () => openPopout(p.id);
+
+        card.innerHTML = `
+          <div class="player-card-left" style="background-color: ${colors[0]};">
+            <span class="player-num">#${p.number}</span>
+            <span>${p.name}</span>
+          </div>
+          <div class="player-card-right" style="background-color: ${colors[1]};">
+            K:${k} H:${h} M:${m} T:${t}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function openPopout(playerId) {
+      selectedPlayerId = playerId;
+      const player = players.find(p => p.id === playerId);
+      document.getElementById('popout-player-title').innerText = `#${player.number} ${player.name}`;
+
+      const grid = document.getElementById('popout-stat-grid');
+      grid.innerHTML = '';
+
+      const allPopoutStats = [...popoutBaseStats, ...customStats];
+      
+      allPopoutStats.forEach(label => {
+        const btn = document.createElement('button');
+        btn.className = 'stat-btn';
+        btn.innerText = label;
+        btn.onclick = () => {
+          const recordKey = statKeyMap[label] || label; 
+          recordStat(playerId, recordKey);
+          closePopout();
+        };
+        grid.appendChild(btn);
+      });
+
+      document.getElementById('popout-modal').classList.add('active');
+    }
+
+    function closePopout(e) {
+      if (!e || e.target.id === 'popout-modal') {
+        document.getElementById('popout-modal').classList.remove('active');
+      }
+    }
+
+    // ==========================================
+    // STAT RECORDING & UNDO ENGINE
+    // ==========================================
+    function recordStat(playerId, statKey) {
+      const player = players.find(p => p.id === playerId);
+      if (!player) return;
+
+      const qKey = `Q${currentQuarter}`;
+      if (!player.stats[qKey][statKey]) player.stats[qKey][statKey] = 0;
+      player.stats[qKey][statKey]++;
+
+      // Push to Undo stack
+      statHistory.push({ playerId, quarter: currentQuarter, statKey });
+
+      // Audio/Haptic Feedback
+      playTone('success');
+      triggerHaptic('success');
+
+      // Update UI
+      renderPlayerButtons();
+      pushVoiceFeed(`${player.name} — ${statKey}`);
+    }
+
+    function undoLastStat() {
+      if (statHistory.length === 0) {
+        playTone('error');
+        triggerHaptic('error');
+        return;
+      }
+
+      const last = statHistory.pop();
+      const player = players.find(p => p.id === last.playerId);
+      if (player && player.stats[`Q${last.quarter}`][last.statKey] > 0) {
+        player.stats[`Q${last.quarter}`][last.statKey]--;
+        playTone('error');
+        triggerHaptic('success');
+        renderPlayerButtons();
+        pushVoiceFeed(`UNDO: ${player.name} ${last.statKey}`);
+      }
+    }
+
+    // ==========================================
+    // VOICE SPEECH RECOGNITION ENGINE
+    // ==========================================
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = 'en-AU';
+      recognition.interimResults = false;
+
+      recognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        parseVoiceInput(transcript);
+      };
+
+      recognition.onerror = () => handleVoiceError("Speech error");
+      recognition.onend = () => updatePTTState(false);
+    }
+
+    const pttBtn = document.getElementById('ptt-btn');
+    if (pttBtn && recognition) {
+      pttBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        try {
+          recognition.start();
+          updatePTTState(true);
+        } catch(err){}
+      });
+      pttBtn.addEventListener('pointerup', () => recognition.stop());
+      pttBtn.addEventListener('pointerleave', () => recognition.stop());
+    }
+
+    function updatePTTState(isListening) {
+      if (isListening) {
+        pttBtn.classList.add('listening');
+        pttBtn.innerText = 'LISTENING...';
+      } else {
+        pttBtn.classList.remove('listening');
+        pttBtn.innerText = 'HOLD TO SPEAK';
+      }
+    }
+
+    function parseVoiceInput(text) {
+      const clean = text.toLowerCase().trim();
+
+      // Check for spoken undo
+      if (clean.includes('undo')) {
+        undoLastStat();
+        return;
+      }
+
+      // Longest-Name-First matching
+      const sortedRoster = [...players].sort((a,b) => b.name.length - a.name.length);
+      let matchedPlayer = null;
+
+      for (const p of sortedRoster) {
+        if (clean.includes(p.name.toLowerCase())) {
+          matchedPlayer = p;
+          break;
+        }
+      }
+
+      let matchedStat = null;
+      
+      // Spoken synonyms mapping to base stat shorthand
+      const spokenStatMap = [
+        { keywords: ["handball", "handpass", "hands"], statKey: "H" },
+        { keywords: ["kick"], statKey: "K" },
+        { keywords: ["mark"], statKey: "M" },
+        { keywords: ["tackle"], statKey: "T" }
+      ];
+
+      // 1. Check base stat triggers
+      for (const group of spokenStatMap) {
+        if (group.keywords.some(kw => clean.includes(kw))) {
+          matchedStat = group.statKey;
+          break;
+        }
+      }
+
+      // 2. Check custom stat labels
+      if (!matchedStat) {
+        for (const cStat of customStats) {
+          if (clean.includes(cStat.toLowerCase())) {
+            matchedStat = cStat;
+            break;
+          }
+        }
+      }
+
+      if (matchedPlayer && matchedStat) {
+        recordStat(matchedPlayer.id, matchedStat);
+      } else {
+        handleVoiceError(`Unrecognized: "${clean}"`);
+      }
+    }
+
+    function handleVoiceError(msg) {
+      playTone('error');
+      triggerHaptic('error');
+      pushVoiceFeed(`⚠️ ${msg}`);
+    }
+
+    function pushVoiceFeed(text) {
+      const feed = document.getElementById('voice-feed');
+      const item = document.createElement('div');
+      item.className = 'feed-item';
+      item.innerText = text;
+      feed.insertBefore(item, feed.firstChild);
+    }
+
+    // ==========================================
+    // SETUP & EDIT MODAL
+    // ==========================================
+    function openSetup() {
+      // Load custom stats
+      customStats.forEach((st, idx) => {
+        document.getElementById(`custom-stat-${idx}`).value = st;
+      });
+
+      // Load team colors
+      document.getElementById('home-c1').value = teamColors.home[0];
+      document.getElementById('home-c2').value = teamColors.home[1];
+      document.getElementById('away-c1').value = teamColors.away[0];
+      document.getElementById('away-c2').value = teamColors.away[1];
+
+      renderRosterEditor();
+      updateSetupColorPreviews();
+
+      document.getElementById('setup-modal').classList.add('active');
+    }
+
+    function renderRosterEditor() {
+      const container = document.getElementById('roster-editor-list');
+      container.innerHTML = '';
+      players.forEach((p, idx) => {
+        const homeColor = document.getElementById('home-c1').value;
+        const awayColor = document.getElementById('away-c1').value;
+        const currentBg = p.team === 'home' ? homeColor : awayColor;
+
+        const row = document.createElement('div');
+        row.className = 'roster-row';
+        row.innerHTML = `
+          <input type="number" class="form-control" value="${p.number}" onchange="players[${idx}].number = parseInt(this.value)">
+          <input type="text" class="form-control" value="${p.name}" placeholder="Player Name" onchange="players[${idx}].name = this.value">
+          <button type="button" class="form-control team-select-btn" id="team-btn-${idx}" style="background-color: ${currentBg}; color: #fff;" onclick="togglePlayerTeam(${idx})">
+            ${p.team.toUpperCase()}
+          </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function togglePlayerTeam(idx) {
+      players[idx].team = players[idx].team === 'home' ? 'away' : 'home';
+      const homeColor = document.getElementById('home-c1').value;
+      const awayColor = document.getElementById('away-c1').value;
+      const btn = document.getElementById(`team-btn-${idx}`);
+      btn.innerText = players[idx].team.toUpperCase();
+      btn.style.backgroundColor = players[idx].team === 'home' ? homeColor : awayColor;
+    }
+
+    function updateSetupColorPreviews() {
+      teamColors.home = [document.getElementById('home-c1').value, document.getElementById('home-c2').value];
+      teamColors.away = [document.getElementById('away-c1').value, document.getElementById('away-c2').value];
+
+      players.forEach((p, idx) => {
+        const btn = document.getElementById(`team-btn-${idx}`);
+        if (btn) {
+          btn.style.backgroundColor = p.team === 'home' ? teamColors.home[0] : teamColors.away[0];
+        }
+      });
+    }
+
+    function closeSetup() {
+      [0,1,2,3].forEach(idx => {
+        customStats[idx] = document.getElementById(`custom-stat-${idx}`).value.toUpperCase() || `ST${idx+1}`;
+      });
+
+      updateSetupColorPreviews();
+      document.getElementById('setup-modal').classList.remove('active');
+      renderPlayerButtons();
+    }
+
+    function addRosterRow() {
+      const newId = players.length + 1;
+      players.push({
+        id: newId, number: newId, name: `Player ${newId}`, team: 'home',
+        stats: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
+      });
+      renderRosterEditor();
+    }
+
+    // ==========================================
+    // SUMMARY & EXPORT
+    // ==========================================
+    function renderSummaryTable() {
+      const table = document.getElementById('summary-table');
+      const allStatsToDisplay = [...baseStats, ...customStats];
+
+      let html = `<thead><tr><th>#</th><th>Player</th><th>Disp</th>`;
+      allStatsToDisplay.forEach(s => html += `<th>${s}</th>`);
+      html += `</tr></thead><tbody>`;
+
+      const teams = ['home', 'away'];
+
+      teams.forEach(tKey => {
+        const teamPlayers = players.filter(p => p.team === tKey);
+        if (teamPlayers.length === 0) return;
+
+        let teamTotK = 0, teamTotH = 0;
+        let teamStatTotals = {};
+        allStatsToDisplay.forEach(s => teamStatTotals[s] = 0);
+
+        teamPlayers.forEach(p => {
+          let totK = 0, totH = 0;
+          let statTotals = {};
+          allStatsToDisplay.forEach(s => statTotals[s] = 0);
+
+          [1,2,3,4].forEach(q => {
+            const qs = p.stats[`Q${q}`] || {};
+            totK += qs.K || 0;
+            totH += qs.H || 0;
+            allStatsToDisplay.forEach(s => statTotals[s] += (qs[s] || 0));
+          });
+
+          const disposals = totK + totH;
+          teamTotK += totK;
+          teamTotH += totH;
+          allStatsToDisplay.forEach(s => teamStatTotals[s] += statTotals[s]);
+
+          html += `<tr>
+            <td>${p.number}</td>
+            <td style="text-align:left;">${p.name}</td>
+            <td><strong>${disposals}</strong></td>`;
+          allStatsToDisplay.forEach(s => html += `<td>${statTotals[s]}</td>`);
+          html += `</tr>`;
+        });
+
+        // Team Subtotal Row
+        const teamDisposals = teamTotK + teamTotH;
+        html += `<tr class="team-total-row">
+          <td colspan="2" style="text-align:left;">TOTAL (${tKey.toUpperCase()})</td>
+          <td>${teamDisposals}</td>`;
+        allStatsToDisplay.forEach(s => html += `<td>${teamStatTotals[s]}</td>`);
+        html += `</tr>`;
+      });
+
+      html += `</tbody>`;
+      table.innerHTML = html;
+    }
+
+    function exportCSV() {
+      const allStatsToDisplay = [...baseStats, ...customStats];
+      let csv = `Number,Name,Team,Disposals,` + allStatsToDisplay.join(',') + `\n`;
+
+      players.forEach(p => {
+        let totK = 0, totH = 0;
+        let statTotals = {};
+        allStatsToDisplay.forEach(s => statTotals[s] = 0);
+
+        [1,2,3,4].forEach(q => {
+          const qs = p.stats[`Q${q}`] || {};
+          totK += qs.K || 0;
+          totH += qs.H || 0;
+          allStatsToDisplay.forEach(s => statTotals[s] += (qs[s] || 0));
+        });
+
+        const disposals = totK + totH;
+        csv += `${p.number},"${p.name}",${p.team},${disposals},` + allStatsToDisplay.map(s => statTotals[s]).join(',') + `\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `VoiceStatz_Export.csv`;
+      a.click();
+    }
+
+    function resetDataPrompt() {
+      if (confirm("Choose Reset Option:\n\nClick 'OK' to reset STATS ONLY.\nClick 'Cancel' to keep current stats.")) {
+        players.forEach(p => p.stats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} });
+        statHistory = [];
+        renderPlayerButtons();
+        renderSummaryTable();
+        alert("All match stats reset.");
+      }
+    }
+
+    // Initial Render
+    renderPlayerButtons();
+  </script>
+</body>
+</html>

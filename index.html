@@ -62,7 +62,7 @@
     .popout-content { background: var(--card-bg); width: 100%; max-width: 360px; border-radius: 12px; padding: 16px; border: 1px solid #444; }
     .popout-header { text-align: center; font-size: 1.2rem; margin-bottom: 15px; font-weight: bold; }
     .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .stat-btn { background: #2c2c2c; color: #fff; border: 1px solid #444; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    .stat-btn { background: #2c2c2c; color: #fff; border: 1px solid #444; padding: 14px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     .stat-btn:active { background: var(--accent-blue); }
 
     /* Voice Page Specifics */
@@ -80,7 +80,6 @@
 
     .voice-controls-container { position: fixed; bottom: 15px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 10px; }
     
-    /* Standardised Undo Button */
     .undo-btn-standard {
       width: 100%; height: 48px; background: #444; color: #fff; font-size: 1.1rem; font-weight: bold;
       border: 1px solid #666; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer;
@@ -104,7 +103,6 @@
     .form-group label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 4px; }
     .form-control { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.95rem; }
     
-    /* Color Input Swatch Styling */
     .color-swatch-input {
       -webkit-appearance: none; border: 1px solid #555; border-radius: 6px; height: 38px; cursor: pointer; padding: 0;
     }
@@ -141,15 +139,12 @@
       <button class="q-btn" onclick="setQuarter(4)">Q4</button>
     </div>
 
-    <div class="player-list" id="player-buttons-container">
-      <!-- Player buttons injected dynamically -->
-    </div>
+    <div class="player-list" id="player-buttons-container"></div>
 
     <div style="margin-top: 20px; margin-bottom: 90px; text-align: center; padding: 0 4px;">
       <button class="btn-header primary" style="width:100%; padding: 12px; font-size: 1rem;" onclick="switchPage('page-summary')">Summary & Export</button>
     </div>
 
-    <!-- Floating Undo Container -->
     <div class="floating-undo-container">
       <button class="undo-btn-standard" onclick="undoLastStat()">↩ UNDO LAST STAT</button>
     </div>
@@ -196,9 +191,7 @@
     </div>
 
     <div class="table-responsive">
-      <table id="summary-table">
-        <!-- Rendered dynamically -->
-      </table>
+      <table id="summary-table"></table>
     </div>
   </div>
 
@@ -206,9 +199,7 @@
   <div id="popout-modal" class="popout-overlay" onclick="closePopout(event)">
     <div class="popout-content">
       <div class="popout-header" id="popout-player-title">Player Name</div>
-      <div class="stat-grid" id="popout-stat-grid">
-        <!-- Populated dynamically -->
-      </div>
+      <div class="stat-grid" id="popout-stat-grid"></div>
     </div>
   </div>
 
@@ -220,12 +211,24 @@
     </header>
 
     <div class="form-group">
-      <label>Custom Stat Labels (Tip: Type exactly what you will speak)</label>
+      <label>Custom Stat Labels (Type or tap 🎤 to enter by voice)</label>
       <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-        <input type="text" id="custom-stat-0" class="form-control" value="TURNOVER">
-        <input type="text" id="custom-stat-1" class="form-control" value="CLEARANCE">
-        <input type="text" id="custom-stat-2" class="form-control" value="SHOT">
-        <input type="text" id="custom-stat-3" class="form-control" value="SPOIL">
+        <div style="display:flex; gap:4px;">
+          <input type="text" id="custom-stat-0" class="form-control" value="INSIDE 50">
+          <button type="button" class="btn-header primary" onclick="listenForCustomStat(0)">🎤</button>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <input type="text" id="custom-stat-1" class="form-control" value="TURNOVER">
+          <button type="button" class="btn-header primary" onclick="listenForCustomStat(1)">🎤</button>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <input type="text" id="custom-stat-2" class="form-control" value="CLEARANCE">
+          <button type="button" class="btn-header primary" onclick="listenForCustomStat(2)">🎤</button>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <input type="text" id="custom-stat-3" class="form-control" value="SHOT">
+          <button type="button" class="btn-header primary" onclick="listenForCustomStat(3)">🎤</button>
+        </div>
       </div>
     </div>
 
@@ -233,27 +236,25 @@
       <label>Team Colours (2 Colours per team)</label>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
         <div>
-          <span style="font-size:0.8rem;">Home Team</span>
+          <span style="font-size:0.8rem;">Home Team (Default: Red/Blue)</span>
           <div style="display:flex; gap:6px; margin-top:4px;">
-            <input type="color" id="home-c1" class="form-control color-swatch-input" value="#198754" onchange="updateSetupColorPreviews()">
-            <input type="color" id="home-c2" class="form-control color-swatch-input" value="#000000" onchange="updateSetupColorPreviews()">
+            <input type="color" id="home-c1" class="form-control color-swatch-input" value="#dc3545" onchange="updateSetupColorPreviews()">
+            <input type="color" id="home-c2" class="form-control color-swatch-input" value="#0d6efd" onchange="updateSetupColorPreviews()">
           </div>
         </div>
         <div>
-          <span style="font-size:0.8rem;">Away Team</span>
+          <span style="font-size:0.8rem;">Away Team (Default: Black)</span>
           <div style="display:flex; gap:6px; margin-top:4px;">
-            <input type="color" id="away-c1" class="form-control color-swatch-input" value="#0d6efd" onchange="updateSetupColorPreviews()">
-            <input type="color" id="away-c2" class="form-control color-swatch-input" value="#dc3545" onchange="updateSetupColorPreviews()">
+            <input type="color" id="away-c1" class="form-control color-swatch-input" value="#121212" onchange="updateSetupColorPreviews()">
+            <input type="color" id="away-c2" class="form-control color-swatch-input" value="#2a2a2a" onchange="updateSetupColorPreviews()">
           </div>
         </div>
       </div>
     </div>
 
     <div class="form-group">
-      <label>Roster (Num | Display Name | Spoken Alias 🎤)</label>
-      <div id="roster-editor-list">
-        <!-- Roster rows generated dynamically -->
-      </div>
+      <label>Roster (Num | Display Name | Alt/Voice Alias 🎤)</label>
+      <div id="roster-editor-list"></div>
       <button class="btn-header" style="width:100%; margin-top:10px;" onclick="addRosterRow()">+ Add Player</button>
     </div>
 
@@ -271,14 +272,16 @@
     let statHistory = [];
 
     const baseStats = ["K", "H", "M", "T"];
+    const baseStatFullNames = { "K": "Kick", "H": "Handball", "M": "Mark", "T": "Tackle" };
     const popoutBaseStats = ["KICK", "HANDBALL", "MARK", "TACKLE"];
     const statKeyMap = { "KICK": "K", "HANDBALL": "H", "MARK": "M", "TACKLE": "T" };
 
-    let customStats = ["TURNOVER", "CLEARANCE", "SHOT", "SPOIL"];
+    let customStats = ["INSIDE 50", "TURNOVER", "CLEARANCE", "SHOT"];
 
+    // Default Home: Red & Blue | Default Away: Plain Black
     let teamColors = {
-      home: ["#198754", "#000000"],
-      away: ["#0d6efd", "#dc3545"]
+      home: ["#dc3545", "#0d6efd"],
+      away: ["#121212", "#2a2a2a"]
     };
 
     let players = Array.from({ length: 21 }, (_, i) => ({
@@ -424,7 +427,10 @@
       triggerHaptic('success');
 
       renderPlayerButtons();
-      pushVoiceFeed(`${player.name} — ${statKey}`);
+      
+      // Expand base stat abbreviation to full word for voice log
+      const fullStatName = baseStatFullNames[statKey] || statKey;
+      pushVoiceFeed(`${player.name} — ${fullStatName}`);
     }
 
     function undoLastStat() {
@@ -441,72 +447,79 @@
         playTone('error');
         triggerHaptic('success');
         renderPlayerButtons();
-        pushVoiceFeed(`UNDO: ${player.name} ${last.statKey}`);
+        
+        const fullStatName = baseStatFullNames[last.statKey] || last.statKey;
+        pushVoiceFeed(`UNDO: ${player.name} ${fullStatName}`);
       }
     }
 
     // ==========================================
-    // VOICE SPEECH RECOGNITION ENGINE
+    // CONTINUOUS PTT VOICE ENGINE
     // ==========================================
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
+    let isUserHoldingPTT = false;
 
     if (SpeechRecognition) {
       recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = true; // Stay active while user holds
       recognition.lang = 'en-AU';
       recognition.interimResults = false;
 
       recognition.onresult = (e) => {
-        const transcript = e.results[0][0].transcript;
+        // Process latest result index
+        const lastIdx = e.results.length - 1;
+        const transcript = e.results[lastIdx][0].transcript;
         parseVoiceInput(transcript);
       };
 
       recognition.onerror = (e) => {
-        updatePTTState(false);
-        if (e.error === 'not-allowed') {
-          handleVoiceError("Mic permission blocked (Requires HTTPS)");
-        } else {
+        if (e.error !== 'no-speech') {
           handleVoiceError(`Speech error (${e.error || 'unknown'})`);
         }
       };
 
-      recognition.onend = () => updatePTTState(false);
+      recognition.onend = () => {
+        // If user is still holding down PTT, auto-restart continuous listening
+        if (isUserHoldingPTT) {
+          try { recognition.start(); } catch(err){}
+        } else {
+          updatePTTState(false);
+        }
+      };
     }
 
     const pttBtn = document.getElementById('ptt-btn');
     if (pttBtn && recognition) {
-      let isListening = false;
 
       const startListening = (e) => {
         if (e.cancelable) e.preventDefault();
-        if (isListening) return;
+        if (isUserHoldingPTT) return;
+
+        isUserHoldingPTT = true;
+        updatePTTState(true);
 
         if (audioCtx.state === 'suspended') audioCtx.resume();
         try {
           recognition.start();
-          isListening = true;
-          updatePTTState(true);
         } catch(err){}
       };
 
       const stopListening = (e) => {
         if (e.cancelable) e.preventDefault();
-        if (!isListening) return;
+        if (!isUserHoldingPTT) return;
 
+        isUserHoldingPTT = false;
         try {
           recognition.stop();
         } catch(err){}
-        isListening = false;
         updatePTTState(false);
       };
 
-      // Dedicated Touch Events for Mobile / Android
       pttBtn.addEventListener('touchstart', startListening, { passive: false });
       pttBtn.addEventListener('touchend', stopListening, { passive: false });
       pttBtn.addEventListener('touchcancel', stopListening, { passive: false });
 
-      // Mouse / Pointer Fallbacks for Desktop
       pttBtn.addEventListener('pointerdown', startListening);
       pttBtn.addEventListener('pointerup', stopListening);
       pttBtn.addEventListener('pointerleave', stopListening);
@@ -533,7 +546,7 @@
         return;
       }
 
-      // 2. Match Player via Display Name or Spoken Voice Alias
+      // 2. Match Player via Display Name or Alt Voice Alias
       let matchedPlayer = null;
 
       const sortedRoster = [...players].sort((a, b) => {
@@ -648,7 +661,7 @@
             </button>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: center;">
-            <input type="text" id="alias-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias}" placeholder="Spoken Voice Alias" onchange="players[${idx}].alias = this.value">
+            <input type="text" id="alias-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias}" placeholder="Alt Name / Spoken Alias" onchange="players[${idx}].alias = this.value">
             <button type="button" class="btn-header primary" style="padding: 6px; height: 38px;" onclick="listenForAlias(${idx})" title="Record Voice Alias">🎤</button>
           </div>
         `;
@@ -657,7 +670,7 @@
     }
 
     function listenForAlias(playerIndex) {
-      if (!recognition) {
+      if (!SpeechRecognition) {
         alert("Speech recognition not supported on this browser.");
         return;
       }
@@ -666,7 +679,7 @@
       aliasInput.placeholder = "Listening... Speak name now!";
       aliasInput.value = "";
 
-      const tempRec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      const tempRec = new SpeechRecognition();
       tempRec.lang = 'en-AU';
       tempRec.interimResults = false;
 
@@ -674,12 +687,42 @@
         const spokenName = e.results[0][0].transcript.toLowerCase().trim();
         players[playerIndex].alias = spokenName;
         aliasInput.value = spokenName;
-        aliasInput.placeholder = "Spoken Voice Alias";
+        aliasInput.placeholder = "Alt Name / Spoken Alias";
         playTone('success');
       };
 
       tempRec.onerror = () => {
         aliasInput.placeholder = "Error! Tap mic to try again";
+        playTone('error');
+      };
+
+      tempRec.start();
+    }
+
+    function listenForCustomStat(statIndex) {
+      if (!SpeechRecognition) {
+        alert("Speech recognition not supported on this browser.");
+        return;
+      }
+
+      const statInput = document.getElementById(`custom-stat-${statIndex}`);
+      statInput.placeholder = "Listening... Speak stat name!";
+      statInput.value = "";
+
+      const tempRec = new SpeechRecognition();
+      tempRec.lang = 'en-AU';
+      tempRec.interimResults = false;
+
+      tempRec.onresult = (e) => {
+        const spokenStat = e.results[0][0].transcript.toUpperCase().trim();
+        customStats[statIndex] = spokenStat;
+        statInput.value = spokenStat;
+        statInput.placeholder = "Custom Stat Label";
+        playTone('success');
+      };
+
+      tempRec.onerror = () => {
+        statInput.placeholder = "Error! Tap mic to try again";
         playTone('error');
       };
 

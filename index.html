@@ -65,19 +65,30 @@
     .stat-btn { background: #2c2c2c; color: #fff; border: 1px solid #444; padding: 14px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     .stat-btn:active { background: var(--accent-blue); }
 
-    /* Voice Page Specifics */
-    .voice-feed-container { height: 220px; display: flex; flex-direction: column-reverse; justify-content: flex-start; align-items: center; gap: 12px; margin: 20px 0; overflow: hidden; }
-    .feed-item {
-      background: #252525; border: 2px solid var(--accent-blue); border-radius: 10px; padding: 12px 20px; text-align: center;
-      transition: all 0.3s ease; animation: slideUp 0.3s ease-out;
+    /* Voice Page Scrollable Feed */
+    .voice-feed-container { 
+      height: 280px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: flex-start; 
+      align-items: center; 
+      gap: 8px; 
+      margin: 15px 0; 
+      overflow-y: auto; 
+      padding: 6px;
+      border: 1px solid #222;
+      border-radius: 8px;
+      background: #161616;
+      -webkit-overflow-scrolling: touch;
     }
-    .feed-item:nth-child(1) { font-size: 1.3rem; font-weight: bold; opacity: 1; transform: scale(1); border-color: var(--accent-green); }
-    .feed-item:nth-child(2) { font-size: 0.95rem; opacity: 0.7; transform: scale(0.9); }
-    .feed-item:nth-child(3) { font-size: 0.8rem; opacity: 0.4; transform: scale(0.8); }
-    .feed-item:nth-child(n+4) { display: none; }
+    .feed-item {
+      width: 100%;
+      background: #252525; border: 1px solid var(--accent-blue); border-radius: 8px; padding: 10px 14px; text-align: center;
+      font-size: 0.95rem; font-weight: bold; transition: all 0.2s ease;
+    }
+    .feed-item:nth-child(1) { font-size: 1.1rem; border-color: var(--accent-green); background: #2a352a; }
+    .feed-item.error-feed { border-color: var(--accent-red); background: #382222; color: #ff9999; }
     
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; } }
-
     .voice-controls-container { position: fixed; bottom: 15px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 10px; }
     
     .undo-btn-standard {
@@ -285,11 +296,13 @@
 
   <script>
     // ==========================================
-    // DATA STRUCTURES & GLOBAL STATE
+    // DATA STRUCTURES, STATE & LOCALSTORAGE
     // ==========================================
     let currentQuarter = 1;
     let selectedPlayerId = null;
     let statHistory = [];
+    let lastVoiceProcessedTime = 0;
+    let lastProcessedText = "";
 
     const baseStats = ["K", "H", "M", "T"];
     const baseStatFullNames = { "K": "Kick", "H": "Handball", "M": "Mark", "T": "Tackle" };
@@ -317,13 +330,55 @@
 
     let players = generateDefaultRoster();
 
+    // Persistent LocalStorage Save/Load
+    function saveAppState() {
+      try {
+        const state = {
+          players,
+          customStats,
+          teamColors,
+          statHistory,
+          currentQuarter
+        };
+        localStorage.setItem('voicestatz_state', JSON.stringify(state));
+      } catch(e){}
+    }
+
+    function loadAppState() {
+      try {
+        const saved = localStorage.getItem('voicestatz_state');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.players) players = parsed.players;
+          if (parsed.customStats) customStats = parsed.customStats;
+          if (parsed.teamColors) teamColors = parsed.teamColors;
+          if (parsed.statHistory) statHistory = parsed.statHistory;
+          if (parsed.currentQuarter) currentQuarter = parsed.currentQuarter;
+        }
+      } catch(e){}
+    }
+
+    // Load saved data immediately on launch
+    loadAppState();
+
     // ==========================================
     // AUDIO SYNTH & HAPTIC FEEDBACK
     // ==========================================
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx = null;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
 
     function playTone(type) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      initAudioContext();
+      if (!audioCtx) return;
+
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain);
@@ -335,10 +390,12 @@
         osc.start();
         osc.stop(audioCtx.currentTime + 0.1);
       } else {
-        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(100, audioCtx.currentTime + 0.08);
         gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
+        osc.stop(audioCtx.currentTime + 0.18);
       }
     }
 
@@ -360,6 +417,7 @@
 
     function setQuarter(q) {
       currentQuarter = q;
+      saveAppState();
       document.querySelectorAll('.quarter-bar').forEach(bar => {
         const btns = bar.querySelectorAll('.q-btn');
         btns.forEach((btn, idx) => {
@@ -446,6 +504,7 @@
       player.stats[qKey][statKey]++;
 
       statHistory.push({ playerId, quarter: currentQuarter, statKey });
+      saveAppState();
 
       playTone('success');
       triggerHaptic('success');
@@ -453,7 +512,7 @@
       renderPlayerButtons();
       
       const fullStatName = baseStatFullNames[statKey] || statKey;
-      pushVoiceFeed(`${player.name} — ${fullStatName}`);
+      pushVoiceFeed(`${player.name} — ${fullStatName}`, false);
     }
 
     function undoLastStat() {
@@ -467,17 +526,19 @@
       const player = players.find(p => p.id === last.playerId);
       if (player && player.stats[`Q${last.quarter}`][last.statKey] > 0) {
         player.stats[`Q${last.quarter}`][last.statKey]--;
+        saveAppState();
+        
         playTone('error');
         triggerHaptic('success');
         renderPlayerButtons();
         
         const fullStatName = baseStatFullNames[last.statKey] || last.statKey;
-        pushVoiceFeed(`UNDO: ${player.name} ${fullStatName}`);
+        pushVoiceFeed(`UNDO: ${player.name} ${fullStatName}`, true);
       }
     }
 
     // ==========================================
-    // CONTINUOUS PTT VOICE ENGINE
+    // CONTINUOUS PTT VOICE ENGINE WITH AUTO-RESTART
     // ==========================================
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
@@ -502,6 +563,7 @@
       };
 
       recognition.onend = () => {
+        // Auto-restart stream if user is still holding PTT button
         if (isUserHoldingPTT) {
           try { recognition.start(); } catch(err){}
         } else {
@@ -520,7 +582,7 @@
         isUserHoldingPTT = true;
         updatePTTState(true);
 
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        initAudioContext();
         try {
           recognition.start();
         } catch(err){}
@@ -560,6 +622,16 @@
 
     function parseVoiceInput(text) {
       const clean = text.toLowerCase().trim();
+      const now = Date.now();
+
+      if (!clean) return;
+
+      if (clean === lastProcessedText && (now - lastVoiceProcessedTime) < 400) {
+        return;
+      }
+
+      lastVoiceProcessedTime = now;
+      lastProcessedText = clean;
 
       // 1. Undo Command
       if (clean.includes('undo')) {
@@ -631,15 +703,17 @@
     function handleVoiceError(msg) {
       playTone('error');
       triggerHaptic('error');
-      pushVoiceFeed(`⚠️ ${msg}`);
+      pushVoiceFeed(`⚠️ ${msg}`, true);
     }
 
-    function pushVoiceFeed(text) {
+    function pushVoiceFeed(text, isError = false) {
       const feed = document.getElementById('voice-feed');
       const item = document.createElement('div');
-      item.className = 'feed-item';
+      item.className = isError ? 'feed-item error-feed' : 'feed-item';
       item.innerText = text;
+      
       feed.insertBefore(item, feed.firstChild);
+      feed.scrollTop = 0;
     }
 
     // ==========================================
@@ -678,18 +752,18 @@
         
         row.innerHTML = `
           <div style="display: grid; grid-template-columns: 45px 1fr 70px; gap: 6px; align-items: center;">
-            <input type="number" class="form-control" value="${p.number}" onchange="players[${idx}].number = parseInt(this.value)">
-            <input type="text" class="form-control" value="${p.name}" placeholder="Display Name" onchange="players[${idx}].name = this.value">
+            <input type="number" class="form-control" value="${p.number}" onchange="players[${idx}].number = parseInt(this.value); saveAppState();">
+            <input type="text" class="form-control" value="${p.name}" placeholder="Display Name" onchange="players[${idx}].name = this.value; saveAppState();">
             <button type="button" class="form-control team-select-btn" id="team-btn-${idx}" style="background-color: ${currentBg}; color: #fff;" onclick="togglePlayerTeam(${idx})">
               ${p.team.toUpperCase()}
             </button>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: center;">
-            <input type="text" id="alias1-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias1}" placeholder="Voice Alias 1" onchange="players[${idx}].alias1 = this.value">
+            <input type="text" id="alias1-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias1}" placeholder="Voice Alias 1" onchange="players[${idx}].alias1 = this.value; saveAppState();">
             <button type="button" class="btn-header primary" style="padding: 6px; height: 38px;" onclick="listenForAlias(${idx}, 1)" title="Record Voice Alias 1">🎤</button>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: center;">
-            <input type="text" id="alias2-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias2}" placeholder="Voice Alias 2" onchange="players[${idx}].alias2 = this.value">
+            <input type="text" id="alias2-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias2}" placeholder="Voice Alias 2" onchange="players[${idx}].alias2 = this.value; saveAppState();">
             <button type="button" class="btn-header primary" style="padding: 6px; height: 38px;" onclick="listenForAlias(${idx}, 2)" title="Record Voice Alias 2">🎤</button>
           </div>
         `;
@@ -719,6 +793,7 @@
 
         aliasInput.value = spokenName;
         aliasInput.placeholder = `Voice Alias ${aliasSlot}`;
+        saveAppState();
         playTone('success');
       };
 
@@ -749,6 +824,7 @@
         customStats[statIndex] = spokenStat;
         statInput.value = spokenStat;
         statInput.placeholder = "Custom Stat Label";
+        saveAppState();
         playTone('success');
       };
 
@@ -762,6 +838,7 @@
 
     function togglePlayerTeam(idx) {
       players[idx].team = players[idx].team === 'home' ? 'away' : 'home';
+      saveAppState();
       const homeColor = document.getElementById('home-c1').value;
       const awayColor = document.getElementById('away-c1').value;
       const btn = document.getElementById(`team-btn-${idx}`);
@@ -772,6 +849,7 @@
     function updateSetupColorPreviews() {
       teamColors.home = [document.getElementById('home-c1').value, document.getElementById('home-c2').value];
       teamColors.away = [document.getElementById('away-c1').value, document.getElementById('away-c2').value];
+      saveAppState();
 
       players.forEach((p, idx) => {
         const btn = document.getElementById(`team-btn-${idx}`);
@@ -787,6 +865,7 @@
       });
 
       updateSetupColorPreviews();
+      saveAppState();
       document.getElementById('setup-modal').classList.remove('active');
       renderPlayerButtons();
     }
@@ -797,6 +876,7 @@
         id: newId, number: newId, name: `Player ${newId}`, alias1: '', alias2: '', team: 'home',
         stats: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
       });
+      saveAppState();
       renderRosterEditor();
     }
 
@@ -895,12 +975,14 @@
       if (type === 'stats') {
         players.forEach(p => p.stats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} });
         statHistory = [];
+        saveAppState();
         alert("Match stats reset successfully. Roster preserved.");
       } else if (type === 'all') {
         players = generateDefaultRoster();
         statHistory = [];
         customStats = ["INSIDE 50", "TURNOVER", "CLEARANCE", "SHOT"];
         teamColors = { home: ["#dc3545", "#0d6efd"], away: ["#121212", "#2a2a2a"] };
+        localStorage.removeItem('voicestatz_state');
         alert("Full reset complete. Stats and roster restored to defaults.");
       }
       

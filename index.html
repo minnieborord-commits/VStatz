@@ -65,29 +65,47 @@
     .stat-btn { background: #2c2c2c; color: #fff; border: 1px solid #444; padding: 14px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     .stat-btn:active { background: var(--accent-blue); }
 
-    /* Voice Page Scrollable Feed */
+    /* Voice Page Centered Scrollable Feed */
     .voice-feed-container { 
       height: 280px; 
       display: flex; 
       flex-direction: column; 
-      justify-content: flex-start; 
       align-items: center; 
-      gap: 8px; 
+      gap: 10px; 
       margin: 15px 0; 
       overflow-y: auto; 
-      padding: 6px;
+      padding: 100px 10px; /* Padding centers the current item vertically */
       border: 1px solid #222;
-      border-radius: 8px;
-      background: #161616;
+      border-radius: 12px;
+      background: #141414;
       -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
     .feed-item {
       width: 100%;
-      background: #252525; border: 1px solid var(--accent-blue); border-radius: 8px; padding: 10px 14px; text-align: center;
-      font-size: 0.95rem; font-weight: bold; transition: all 0.2s ease;
+      background: #222; border: 1px solid #444; border-radius: 8px; padding: 10px 14px; text-align: center;
+      font-size: 0.9rem; font-weight: bold; opacity: 0.5; transform: scale(0.92);
+      transition: all 0.25s ease;
     }
-    .feed-item:nth-child(1) { font-size: 1.1rem; border-color: var(--accent-green); background: #2a352a; }
-    .feed-item.error-feed { border-color: var(--accent-red); background: #382222; color: #ff9999; }
+    .feed-item.latest-item {
+      font-size: 1.25rem; 
+      opacity: 1; 
+      transform: scale(1.03); 
+      border: 2px solid var(--accent-green); 
+      background: #1e3323; 
+      box-shadow: 0 0 15px rgba(25, 135, 84, 0.4);
+      color: #fff;
+    }
+    .feed-item.error-feed { 
+      border-color: var(--accent-red); 
+      background: #382222; 
+      color: #ff9999; 
+    }
+    .feed-item.latest-item.error-feed {
+      border: 2px solid var(--accent-red);
+      background: #4a1f1f;
+      box-shadow: 0 0 15px rgba(220, 53, 69, 0.5);
+    }
     
     .voice-controls-container { position: fixed; bottom: 15px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 10px; }
     
@@ -176,7 +194,7 @@
     </div>
 
     <div class="voice-feed-container" id="voice-feed">
-      <div class="feed-item" style="border-color:#555;">Ready — Hold button to speak</div>
+      <div class="feed-item latest-item" style="border-color:#555; background:#222; box-shadow:none;">Ready — Hold button to speak</div>
     </div>
 
     <div class="voice-controls-container">
@@ -264,7 +282,7 @@
     </div>
 
     <div class="form-group">
-      <label>Roster (Num | Display Name | 2x Voice Aliases 🎤)</label>
+      <label>Roster (Num | Display Name | 3x Voice Aliases 🎤)</label>
       <div id="roster-editor-list"></div>
       <button class="btn-header" style="width:100%; margin-top:10px;" onclick="addRosterRow()">+ Add Player</button>
     </div>
@@ -323,6 +341,7 @@
         name: `Player ${i + 1}`,
         alias1: '',
         alias2: '',
+        alias3: '',
         team: 'home',
         stats: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
       }));
@@ -330,7 +349,6 @@
 
     let players = generateDefaultRoster();
 
-    // Persistent LocalStorage Save/Load
     function saveAppState() {
       try {
         const state = {
@@ -358,7 +376,6 @@
       } catch(e){}
     }
 
-    // Load saved data immediately on launch
     loadAppState();
 
     // ==========================================
@@ -563,7 +580,6 @@
       };
 
       recognition.onend = () => {
-        // Auto-restart stream if user is still holding PTT button
         if (isUserHoldingPTT) {
           try { recognition.start(); } catch(err){}
         } else {
@@ -639,12 +655,12 @@
         return;
       }
 
-      // 2. Match Player via Display Name or Dual Voice Aliases
+      // 2. Match Player via Display Name or Triple Voice Aliases
       let matchedPlayer = null;
 
       const sortedRoster = [...players].sort((a, b) => {
-        const lenA = Math.max(a.name.length, (a.alias1 || '').length, (a.alias2 || '').length);
-        const lenB = Math.max(b.name.length, (b.alias1 || '').length, (b.alias2 || '').length);
+        const lenA = Math.max(a.name.length, (a.alias1 || '').length, (a.alias2 || '').length, (a.alias3 || '').length);
+        const lenB = Math.max(b.name.length, (b.alias1 || '').length, (b.alias2 || '').length, (b.alias3 || '').length);
         return lenB - lenA;
       });
 
@@ -652,11 +668,13 @@
         const pName = p.name.toLowerCase().trim();
         const a1 = (p.alias1 || '').toLowerCase().trim();
         const a2 = (p.alias2 || '').toLowerCase().trim();
+        const a3 = (p.alias3 || '').toLowerCase().trim();
 
         if (
           clean.includes(pName) || 
           (a1 !== '' && clean.includes(a1)) ||
-          (a2 !== '' && clean.includes(a2))
+          (a2 !== '' && clean.includes(a2)) ||
+          (a3 !== '' && clean.includes(a3))
         ) {
           matchedPlayer = p;
           break;
@@ -708,12 +726,22 @@
 
     function pushVoiceFeed(text, isError = false) {
       const feed = document.getElementById('voice-feed');
+
+      // Demote current latest item to standard historical item
+      const prevLatest = feed.querySelector('.latest-item');
+      if (prevLatest) {
+        prevLatest.classList.remove('latest-item');
+      }
+
+      // Create new centered latest item
       const item = document.createElement('div');
-      item.className = isError ? 'feed-item error-feed' : 'feed-item';
+      item.className = isError ? 'feed-item latest-item error-feed' : 'feed-item latest-item';
       item.innerText = text;
-      
-      feed.insertBefore(item, feed.firstChild);
-      feed.scrollTop = 0;
+
+      feed.appendChild(item);
+
+      // Smoothly scroll container to bring new latest item directly into the center
+      item.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     // ==========================================
@@ -746,6 +774,7 @@
 
         if (!p.alias1) p.alias1 = '';
         if (!p.alias2) p.alias2 = '';
+        if (!p.alias3) p.alias3 = '';
 
         const row = document.createElement('div');
         row.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; background: #222; padding: 8px; border-radius: 6px;";
@@ -766,6 +795,10 @@
             <input type="text" id="alias2-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias2}" placeholder="Voice Alias 2" onchange="players[${idx}].alias2 = this.value; saveAppState();">
             <button type="button" class="btn-header primary" style="padding: 6px; height: 38px;" onclick="listenForAlias(${idx}, 2)" title="Record Voice Alias 2">🎤</button>
           </div>
+          <div style="display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: center;">
+            <input type="text" id="alias3-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias3}" placeholder="Voice Alias 3" onchange="players[${idx}].alias3 = this.value; saveAppState();">
+            <button type="button" class="btn-header primary" style="padding: 6px; height: 38px;" onclick="listenForAlias(${idx}, 3)" title="Record Voice Alias 3">🎤</button>
+          </div>
         `;
         container.appendChild(row);
       });
@@ -777,7 +810,7 @@
         return;
       }
 
-      const inputId = aliasSlot === 1 ? `alias1-input-${playerIndex}` : `alias2-input-${playerIndex}`;
+      const inputId = `alias${aliasSlot}-input-${playerIndex}`;
       const aliasInput = document.getElementById(inputId);
       aliasInput.placeholder = "Listening... Speak name now!";
       aliasInput.value = "";
@@ -789,7 +822,8 @@
       tempRec.onresult = (e) => {
         const spokenName = e.results[0][0].transcript.toLowerCase().trim();
         if (aliasSlot === 1) players[playerIndex].alias1 = spokenName;
-        else players[playerIndex].alias2 = spokenName;
+        else if (aliasSlot === 2) players[playerIndex].alias2 = spokenName;
+        else if (aliasSlot === 3) players[playerIndex].alias3 = spokenName;
 
         aliasInput.value = spokenName;
         aliasInput.placeholder = `Voice Alias ${aliasSlot}`;
@@ -873,7 +907,7 @@
     function addRosterRow() {
       const newId = players.length + 1;
       players.push({
-        id: newId, number: newId, name: `Player ${newId}`, alias1: '', alias2: '', team: 'home',
+        id: newId, number: newId, name: `Player ${newId}`, alias1: '', alias2: '', alias3: '', team: 'home',
         stats: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
       });
       saveAppState();

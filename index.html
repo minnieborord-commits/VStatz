@@ -74,7 +74,7 @@
       gap: 10px; 
       margin: 15px 0; 
       overflow-y: auto; 
-      padding: 100px 10px; /* Padding centers the current item vertically */
+      padding: 100px 10px;
       border: 1px solid #222;
       border-radius: 12px;
       background: #141414;
@@ -193,9 +193,7 @@
       <button class="q-btn" onclick="setQuarter(4)">Q4</button>
     </div>
 
-    <div class="voice-feed-container" id="voice-feed">
-      <div class="feed-item latest-item" style="border-color:#555; background:#222; box-shadow:none;">Ready — Hold button to speak</div>
-    </div>
+    <div class="voice-feed-container" id="voice-feed"></div>
 
     <div class="voice-controls-container">
       <button class="undo-btn-standard" onclick="undoLastStat()">↩ UNDO LAST STAT</button>
@@ -319,6 +317,7 @@
     let currentQuarter = 1;
     let selectedPlayerId = null;
     let statHistory = [];
+    let voiceFeedHistory = [];
     let lastVoiceProcessedTime = 0;
     let lastProcessedText = "";
 
@@ -356,6 +355,7 @@
           customStats,
           teamColors,
           statHistory,
+          voiceFeedHistory,
           currentQuarter
         };
         localStorage.setItem('voicestatz_state', JSON.stringify(state));
@@ -371,6 +371,7 @@
           if (parsed.customStats) customStats = parsed.customStats;
           if (parsed.teamColors) teamColors = parsed.teamColors;
           if (parsed.statHistory) statHistory = parsed.statHistory;
+          if (parsed.voiceFeedHistory) voiceFeedHistory = parsed.voiceFeedHistory;
           if (parsed.currentQuarter) currentQuarter = parsed.currentQuarter;
         }
       } catch(e){}
@@ -521,8 +522,7 @@
       player.stats[qKey][statKey]++;
 
       statHistory.push({ playerId, quarter: currentQuarter, statKey });
-      saveAppState();
-
+      
       playTone('success');
       triggerHaptic('success');
 
@@ -543,7 +543,6 @@
       const player = players.find(p => p.id === last.playerId);
       if (player && player.stats[`Q${last.quarter}`][last.statKey] > 0) {
         player.stats[`Q${last.quarter}`][last.statKey]--;
-        saveAppState();
         
         playTone('error');
         triggerHaptic('success');
@@ -655,7 +654,7 @@
         return;
       }
 
-      // 2. Match Player via Display Name or Triple Voice Aliases
+      // 2. Match Player via Name, Aliases, OR Jumper Number
       let matchedPlayer = null;
 
       const sortedRoster = [...players].sort((a, b) => {
@@ -681,10 +680,24 @@
         }
       }
 
-      // 3. Match Stat
+      if (!matchedPlayer) {
+        const numbersInSpeech = clean.match(/\b\d+\b/g);
+        if (numbersInSpeech) {
+          for (const numStr of numbersInSpeech) {
+            const numVal = parseInt(numStr, 10);
+            const foundByNum = players.find(p => p.number === numVal);
+            if (foundByNum) {
+              matchedPlayer = foundByNum;
+              break;
+            }
+          }
+        }
+      }
+
+      // 3. Match Stat (Added "hans" to keywords)
       let matchedStat = null;
       const spokenStatMap = [
-        { keywords: ["handball", "handpass", "hands"], statKey: "H" },
+        { keywords: ["handball", "handpass", "hands", "hans"], statKey: "H" },
         { keywords: ["kick"], statKey: "K" },
         { keywords: ["mark"], statKey: "M" },
         { keywords: ["tackle"], statKey: "T" }
@@ -725,23 +738,34 @@
     }
 
     function pushVoiceFeed(text, isError = false) {
-      const feed = document.getElementById('voice-feed');
+      voiceFeedHistory.push({ text, isError });
+      saveAppState();
+      renderVoiceFeed();
+    }
 
-      // Demote current latest item to standard historical item
-      const prevLatest = feed.querySelector('.latest-item');
-      if (prevLatest) {
-        prevLatest.classList.remove('latest-item');
+    function renderVoiceFeed() {
+      const feed = document.getElementById('voice-feed');
+      feed.innerHTML = '';
+
+      if (voiceFeedHistory.length === 0) {
+        feed.innerHTML = '<div class="feed-item latest-item" style="border-color:#555; background:#222; box-shadow:none;">Ready — Hold button to speak</div>';
+        return;
       }
 
-      // Create new centered latest item
-      const item = document.createElement('div');
-      item.className = isError ? 'feed-item latest-item error-feed' : 'feed-item latest-item';
-      item.innerText = text;
+      voiceFeedHistory.forEach((item, idx) => {
+        const isLatest = idx === voiceFeedHistory.length - 1;
+        const div = document.createElement('div');
+        div.className = item.isError ? 
+          (isLatest ? 'feed-item latest-item error-feed' : 'feed-item error-feed') : 
+          (isLatest ? 'feed-item latest-item' : 'feed-item');
+        div.innerText = item.text;
+        feed.appendChild(div);
+      });
 
-      feed.appendChild(item);
-
-      // Smoothly scroll container to bring new latest item directly into the center
-      item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const lastEl = feed.lastElementChild;
+      if (lastEl) {
+        lastEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
 
     // ==========================================
@@ -1009,11 +1033,13 @@
       if (type === 'stats') {
         players.forEach(p => p.stats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} });
         statHistory = [];
+        voiceFeedHistory = [];
         saveAppState();
         alert("Match stats reset successfully. Roster preserved.");
       } else if (type === 'all') {
         players = generateDefaultRoster();
         statHistory = [];
+        voiceFeedHistory = [];
         customStats = ["INSIDE 50", "TURNOVER", "CLEARANCE", "SHOT"];
         teamColors = { home: ["#dc3545", "#0d6efd"], away: ["#121212", "#2a2a2a"] };
         localStorage.removeItem('voicestatz_state');
@@ -1022,11 +1048,13 @@
       
       closeResetModal();
       renderPlayerButtons();
+      renderVoiceFeed();
       renderSummaryTable();
     }
 
-    // Initial Render
+    // Initial Renders
     renderPlayerButtons();
+    renderVoiceFeed();
   </script>
 </body>
 </html>

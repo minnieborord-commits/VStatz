@@ -187,7 +187,7 @@
 
     <div style="display:flex; gap:10px; margin: 12px 0;">
       <button class="btn-header primary" style="flex:1;" onclick="exportCSV()">Export CSV</button>
-      <button class="btn-header" style="background:var(--accent-red); border-color:var(--accent-red);" onclick="resetDataPrompt()">Reset Data</button>
+      <button class="btn-header" style="background:var(--accent-red); border-color:var(--accent-red);" onclick="openResetModal()">Reset Options</button>
     </div>
 
     <div class="table-responsive">
@@ -253,13 +253,33 @@
     </div>
 
     <div class="form-group">
-      <label>Roster (Num | Display Name | Alt/Voice Alias 🎤)</label>
+      <label>Roster (Num | Display Name | 2x Voice Aliases 🎤)</label>
       <div id="roster-editor-list"></div>
       <button class="btn-header" style="width:100%; margin-top:10px;" onclick="addRosterRow()">+ Add Player</button>
     </div>
 
     <div style="margin-top:20px;">
       <button class="btn-header primary" style="width:100%; padding:12px; font-size:1rem;" onclick="closeSetup()">Done</button>
+    </div>
+  </div>
+
+  <!-- RESET SELECTION MODAL -->
+  <div id="reset-modal" class="popout-overlay" onclick="closeResetModal(event)">
+    <div class="popout-content" style="text-align: center;">
+      <div class="popout-header">Select Reset Type</div>
+      <p style="font-size: 0.9rem; color: #ccc; margin-bottom: 20px;">Choose whether to clear stats for a new game or completely wipe all roster settings.</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn-header primary" style="padding: 14px; font-size: 1rem;" onclick="executeReset('stats')">
+          Reset Match Stats Only
+        </button>
+        <button class="btn-header" style="background: var(--accent-red); border-color: var(--accent-red); padding: 14px; font-size: 1rem;" onclick="executeReset('all')">
+          Reset Everything (Stats + Roster)
+        </button>
+        <button class="btn-header" style="padding: 10px; margin-top: 5px;" onclick="closeResetModal()">
+          Cancel
+        </button>
+      </div>
     </div>
   </div>
 
@@ -278,20 +298,24 @@
 
     let customStats = ["INSIDE 50", "TURNOVER", "CLEARANCE", "SHOT"];
 
-    // Default Home: Red & Blue | Default Away: Plain Black
     let teamColors = {
       home: ["#dc3545", "#0d6efd"],
       away: ["#121212", "#2a2a2a"]
     };
 
-    let players = Array.from({ length: 21 }, (_, i) => ({
-      id: i + 1,
-      number: i + 1,
-      name: `Player ${i + 1}`,
-      alias: '',
-      team: 'home',
-      stats: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
-    }));
+    function generateDefaultRoster() {
+      return Array.from({ length: 21 }, (_, i) => ({
+        id: i + 1,
+        number: i + 1,
+        name: `Player ${i + 1}`,
+        alias1: '',
+        alias2: '',
+        team: 'home',
+        stats: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
+      }));
+    }
+
+    let players = generateDefaultRoster();
 
     // ==========================================
     // AUDIO SYNTH & HAPTIC FEEDBACK
@@ -428,7 +452,6 @@
 
       renderPlayerButtons();
       
-      // Expand base stat abbreviation to full word for voice log
       const fullStatName = baseStatFullNames[statKey] || statKey;
       pushVoiceFeed(`${player.name} — ${fullStatName}`);
     }
@@ -462,12 +485,11 @@
 
     if (SpeechRecognition) {
       recognition = new SpeechRecognition();
-      recognition.continuous = true; // Stay active while user holds
+      recognition.continuous = true;
       recognition.lang = 'en-AU';
       recognition.interimResults = false;
 
       recognition.onresult = (e) => {
-        // Process latest result index
         const lastIdx = e.results.length - 1;
         const transcript = e.results[lastIdx][0].transcript;
         parseVoiceInput(transcript);
@@ -480,7 +502,6 @@
       };
 
       recognition.onend = () => {
-        // If user is still holding down PTT, auto-restart continuous listening
         if (isUserHoldingPTT) {
           try { recognition.start(); } catch(err){}
         } else {
@@ -546,22 +567,24 @@
         return;
       }
 
-      // 2. Match Player via Display Name or Alt Voice Alias
+      // 2. Match Player via Display Name or Dual Voice Aliases
       let matchedPlayer = null;
 
       const sortedRoster = [...players].sort((a, b) => {
-        const lenA = Math.max(a.name.length, (a.alias || '').length);
-        const lenB = Math.max(b.name.length, (b.alias || '').length);
+        const lenA = Math.max(a.name.length, (a.alias1 || '').length, (a.alias2 || '').length);
+        const lenB = Math.max(b.name.length, (b.alias1 || '').length, (b.alias2 || '').length);
         return lenB - lenA;
       });
 
       for (const p of sortedRoster) {
         const pName = p.name.toLowerCase().trim();
-        const pAlias = (p.alias || '').toLowerCase().trim();
+        const a1 = (p.alias1 || '').toLowerCase().trim();
+        const a2 = (p.alias2 || '').toLowerCase().trim();
 
         if (
           clean.includes(pName) || 
-          (pAlias !== '' && clean.includes(pAlias))
+          (a1 !== '' && clean.includes(a1)) ||
+          (a2 !== '' && clean.includes(a2))
         ) {
           matchedPlayer = p;
           break;
@@ -647,7 +670,8 @@
         const awayColor = document.getElementById('away-c1').value;
         const currentBg = p.team === 'home' ? homeColor : awayColor;
 
-        if (!p.alias) p.alias = '';
+        if (!p.alias1) p.alias1 = '';
+        if (!p.alias2) p.alias2 = '';
 
         const row = document.createElement('div');
         row.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; background: #222; padding: 8px; border-radius: 6px;";
@@ -661,21 +685,26 @@
             </button>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: center;">
-            <input type="text" id="alias-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias}" placeholder="Alt Name / Spoken Alias" onchange="players[${idx}].alias = this.value">
-            <button type="button" class="btn-header primary" style="padding: 6px; height: 38px;" onclick="listenForAlias(${idx})" title="Record Voice Alias">🎤</button>
+            <input type="text" id="alias1-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias1}" placeholder="Voice Alias 1" onchange="players[${idx}].alias1 = this.value">
+            <button type="button" class="btn-header primary" style="padding: 6px; height: 38px;" onclick="listenForAlias(${idx}, 1)" title="Record Voice Alias 1">🎤</button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: center;">
+            <input type="text" id="alias2-input-${idx}" class="form-control" style="font-size: 0.85rem; color: #aaa;" value="${p.alias2}" placeholder="Voice Alias 2" onchange="players[${idx}].alias2 = this.value">
+            <button type="button" class="btn-header primary" style="padding: 6px; height: 38px;" onclick="listenForAlias(${idx}, 2)" title="Record Voice Alias 2">🎤</button>
           </div>
         `;
         container.appendChild(row);
       });
     }
 
-    function listenForAlias(playerIndex) {
+    function listenForAlias(playerIndex, aliasSlot) {
       if (!SpeechRecognition) {
         alert("Speech recognition not supported on this browser.");
         return;
       }
 
-      const aliasInput = document.getElementById(`alias-input-${playerIndex}`);
+      const inputId = aliasSlot === 1 ? `alias1-input-${playerIndex}` : `alias2-input-${playerIndex}`;
+      const aliasInput = document.getElementById(inputId);
       aliasInput.placeholder = "Listening... Speak name now!";
       aliasInput.value = "";
 
@@ -685,9 +714,11 @@
 
       tempRec.onresult = (e) => {
         const spokenName = e.results[0][0].transcript.toLowerCase().trim();
-        players[playerIndex].alias = spokenName;
+        if (aliasSlot === 1) players[playerIndex].alias1 = spokenName;
+        else players[playerIndex].alias2 = spokenName;
+
         aliasInput.value = spokenName;
-        aliasInput.placeholder = "Alt Name / Spoken Alias";
+        aliasInput.placeholder = `Voice Alias ${aliasSlot}`;
         playTone('success');
       };
 
@@ -763,14 +794,14 @@
     function addRosterRow() {
       const newId = players.length + 1;
       players.push({
-        id: newId, number: newId, name: `Player ${newId}`, alias: '', team: 'home',
+        id: newId, number: newId, name: `Player ${newId}`, alias1: '', alias2: '', team: 'home',
         stats: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
       });
       renderRosterEditor();
     }
 
     // ==========================================
-    // SUMMARY & EXPORT
+    // SUMMARY & RESET OPTIONS
     // ==========================================
     function renderSummaryTable() {
       const table = document.getElementById('summary-table');
@@ -850,14 +881,32 @@
       a.click();
     }
 
-    function resetDataPrompt() {
-      if (confirm("Choose Reset Option:\n\nClick 'OK' to reset STATS ONLY.\nClick 'Cancel' to keep current stats.")) {
+    function openResetModal() {
+      document.getElementById('reset-modal').classList.add('active');
+    }
+
+    function closeResetModal(e) {
+      if (!e || e.target.id === 'reset-modal') {
+        document.getElementById('reset-modal').classList.remove('active');
+      }
+    }
+
+    function executeReset(type) {
+      if (type === 'stats') {
         players.forEach(p => p.stats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} });
         statHistory = [];
-        renderPlayerButtons();
-        renderSummaryTable();
-        alert("All match stats reset.");
+        alert("Match stats reset successfully. Roster preserved.");
+      } else if (type === 'all') {
+        players = generateDefaultRoster();
+        statHistory = [];
+        customStats = ["INSIDE 50", "TURNOVER", "CLEARANCE", "SHOT"];
+        teamColors = { home: ["#dc3545", "#0d6efd"], away: ["#121212", "#2a2a2a"] };
+        alert("Full reset complete. Stats and roster restored to defaults.");
       }
+      
+      closeResetModal();
+      renderPlayerButtons();
+      renderSummaryTable();
     }
 
     // Initial Render

@@ -382,12 +382,12 @@
     </header>
 
     <div class="setup-body-content">
-      <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 4px; text-transform: uppercase;">TEAMS & ROSTER SETUP</h2>
+      <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 4px; text-transform: uppercase;">TEAMS, CUSTOM STATS & PLAYER SETUP</h2>
       <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 16px;">Type or tap 🎤 to enter names and voice triggers.</p>
 
-      <!-- Team Settings & Voice Aliases -->
+      <!-- Team Settings & Voice Triggers -->
       <div class="form-group">
-        <label>Teams & Voice Recognition Aliases</label>
+        <label>Teams & Voice Recognition Triggers</label>
         
         <!-- Home Team Setup Card -->
         <div class="team-setup-card">
@@ -395,15 +395,15 @@
           <input type="text" id="home-team-name-input" class="form-control uppercase-input" value="HOME" placeholder="Home Team Display Name" onchange="updateSetupColorPreviews()">
           <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
             <div style="display:flex; gap:2px;">
-              <input type="text" id="home-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Alias 1" onchange="saveAppState()">
+              <input type="text" id="home-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Trigger 1" onchange="saveAppState()">
               <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 1)">🎤</button>
             </div>
             <div style="display:flex; gap:2px;">
-              <input type="text" id="home-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Alias 2" onchange="saveAppState()">
+              <input type="text" id="home-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Trigger 2" onchange="saveAppState()">
               <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 2)">🎤</button>
             </div>
             <div style="display:flex; gap:2px;">
-              <input type="text" id="home-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Alias 3" onchange="saveAppState()">
+              <input type="text" id="home-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Trigger 3" onchange="saveAppState()">
               <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 3)">🎤</button>
             </div>
           </div>
@@ -415,15 +415,15 @@
           <input type="text" id="away-team-name-input" class="form-control uppercase-input" value="OPP" placeholder="Opposition Team Display Name" onchange="updateSetupColorPreviews()">
           <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
             <div style="display:flex; gap:2px;">
-              <input type="text" id="away-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Alias 1" onchange="saveAppState()">
+              <input type="text" id="away-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Trigger 1" onchange="saveAppState()">
               <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 1)">🎤</button>
             </div>
             <div style="display:flex; gap:2px;">
-              <input type="text" id="away-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Alias 2" onchange="saveAppState()">
+              <input type="text" id="away-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Trigger 2" onchange="saveAppState()">
               <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 2)">🎤</button>
             </div>
             <div style="display:flex; gap:2px;">
-              <input type="text" id="away-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Alias 3" onchange="saveAppState()">
+              <input type="text" id="away-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Trigger 3" onchange="saveAppState()">
               <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 3)">🎤</button>
             </div>
           </div>
@@ -473,7 +473,7 @@
       </div>
 
       <div class="form-group">
-        <label>Roster (Num | Display Name | Team | Voice Aliases 🎤)</label>
+        <label>Roster (Num | Display Name | Team | Voice Triggers 🎤)</label>
         <div id="roster-editor-list"></div>
         <button class="btn-header" style="width:100%; margin-top:10px;" onclick="addRosterRow()">+ ADD PLAYER</button>
       </div>
@@ -1235,7 +1235,7 @@
         teamAliases[teamKey][aliasSlot - 1] = spokenName;
 
         aliasInput.value = spokenName;
-        aliasInput.placeholder = `Alias ${aliasSlot}`;
+        aliasInput.placeholder = `Trigger ${aliasSlot}`;
         saveAppState();
         playTone('success');
       };
@@ -1280,16 +1280,16 @@
           </div>
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
             <div style="display:flex; gap:2px;">
-              <input type="text" id="alias1-input-${idx}" class="form-control" style="font-size: 0.8rem; color: #aaa;" value="${p.alias1}" placeholder="Alias 1" onchange="players[${idx}].alias1 = this.value; saveAppState();">
-              <button type="button" class="btn-header primary" style="padding: 4px;" onclick="listenForAlias(${idx}, 1)" title="Record Voice Alias 1">🎤</button>
+              <input type="text" id="alias1-input-${idx}" class="form-control" style="font-size: 0.8rem; color: #aaa;" value="${p.alias1}" placeholder="Trigger 1" onchange="players[${idx}].alias1 = this.value; saveAppState();">
+              <button type="button" class="btn-header primary" style="padding: 4px;" onclick="listenForAlias(${idx}, 1)" title="Record Voice Trigger 1">🎤</button>
             </div>
             <div style="display:flex; gap:2px;">
-              <input type="text" id="alias2-input-${idx}" class="form-control" style="font-size: 0.8rem; color: #aaa;" value="${p.alias2}" placeholder="Alias 2" onchange="players[${idx}].alias2 = this.value; saveAppState();">
-              <button type="button" class="btn-header primary" style="padding: 4px;" onclick="listenForAlias(${idx}, 2)" title="Record Voice Alias 2">🎤</button>
+              <input type="text" id="alias2-input-${idx}" class="form-control" style="font-size: 0.8rem; color: #aaa;" value="${p.alias2}" placeholder="Trigger 2" onchange="players[${idx}].alias2 = this.value; saveAppState();">
+              <button type="button" class="btn-header primary" style="padding: 4px;" onclick="listenForAlias(${idx}, 2)" title="Record Voice Trigger 2">🎤</button>
             </div>
             <div style="display:flex; gap:2px;">
-              <input type="text" id="alias3-input-${idx}" class="form-control" style="font-size: 0.8rem; color: #aaa;" value="${p.alias3}" placeholder="Alias 3" onchange="players[${idx}].alias3 = this.value; saveAppState();">
-              <button type="button" class="btn-header primary" style="padding: 4px;" onclick="listenForAlias(${idx}, 3)" title="Record Voice Alias 3">🎤</button>
+              <input type="text" id="alias3-input-${idx}" class="form-control" style="font-size: 0.8rem; color: #aaa;" value="${p.alias3}" placeholder="Trigger 3" onchange="players[${idx}].alias3 = this.value; saveAppState();">
+              <button type="button" class="btn-header primary" style="padding: 4px;" onclick="listenForAlias(${idx}, 3)" title="Record Voice Trigger 3">🎤</button>
             </div>
           </div>
         `;
@@ -1319,7 +1319,7 @@
         else if (aliasSlot === 3) players[playerIndex].alias3 = spokenName;
 
         aliasInput.value = spokenName;
-        aliasInput.placeholder = `Alias ${aliasSlot}`;
+        aliasInput.placeholder = `Trigger ${aliasSlot}`;
         saveAppState();
         playTone('success');
       };

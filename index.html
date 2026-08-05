@@ -39,16 +39,19 @@
     .view-page { display: none; padding: 12px; }
     .view-page.active { display: block; }
 
-    /* Player Button Cards Split 50/50 */
-    .player-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    /* Section Labels */
+    .section-label { font-size: 0.8rem; font-weight: bold; color: #888; text-transform: uppercase; margin: 10px 0 4px 2px; }
+
+    /* Player & Team Cards */
+    .player-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
     .player-card {
       display: flex; height: 50px; border-radius: 8px; overflow: hidden;
       border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-weight: bold;
     }
     .player-card-left {
-      width: 50%; display: flex; align-items: center; padding: 0 10px; gap: 8px;
-      color: #fff; text-shadow: 1px 1px 2px #000; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      width: 50%; display: flex; align-items: center; padding: 0 8px; gap: 6px;
+      color: #fff; text-shadow: 1px 1px 2px #000; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .player-card-right {
       width: 50%; display: flex; align-items: center; justify-content: center; padding: 0 10px;
@@ -56,14 +59,40 @@
     }
     .player-num { background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; min-width: 26px; text-align: center; }
 
-    /* Pop-out Stat Drawer Modal */
+    /* Dedicated Info Button */
+    .btn-info-icon {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #fff;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-info-icon:active { background: rgba(255, 255, 255, 0.5); }
+
+    /* Pop-out Overlay & Modals */
     .popout-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
     .popout-overlay.active { display: flex; }
-    .popout-content { background: var(--card-bg); width: 100%; max-width: 360px; border-radius: 12px; padding: 16px; border: 1px solid #444; }
-    .popout-header { text-align: center; font-size: 1.2rem; margin-bottom: 15px; font-weight: bold; }
+    .popout-content { background: var(--card-bg); width: 100%; max-width: 360px; border-radius: 12px; padding: 16px; border: 1px solid #444; max-height: 90vh; overflow-y: auto; }
+    .popout-header { text-align: center; font-size: 1.2rem; margin-bottom: 12px; font-weight: bold; }
+    
+    /* Player Stat Summary Box in Modal */
+    .popout-summary-box { background: #141414; border: 1px solid #333; border-radius: 8px; padding: 10px; font-size: 0.85rem; }
+    .popout-summary-row { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 6px 0; }
+    .popout-summary-row:last-child { border-bottom: none; }
+    .popout-summary-row span.val { font-weight: bold; color: var(--accent-blue); }
+
     .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .stat-btn { background: #2c2c2c; color: #fff; border: 1px solid #444; padding: 14px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     .stat-btn:active { background: var(--accent-blue); }
+
+    .btn-cancel { width: 100%; margin-top: 14px; background: #333; color: #fff; border: 1px solid #555; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; }
 
     /* Voice Page Centered Scrollable Feed */
     .voice-feed-container { 
@@ -154,7 +183,7 @@
   <!-- PAGE 1: MANUAL / PLAYERS VIEW -->
   <div id="page-players" class="view-page active">
     <header>
-      <h1>VoiceStatz</h1>
+      <h1>VoiceStatz v2.4</h1>
       <div>
         <button class="btn-header primary" onclick="switchPage('page-voice')">Voice Mode</button>
         <button class="btn-header" onclick="openSetup()">Edit</button>
@@ -168,6 +197,12 @@
       <button class="q-btn" onclick="setQuarter(4)">Q4</button>
     </div>
 
+    <!-- Team Cards Container -->
+    <div class="section-label">Team Summaries</div>
+    <div id="team-buttons-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+    <!-- Player List Container -->
+    <div class="section-label">Player List</div>
     <div class="player-list" id="player-buttons-container"></div>
 
     <div style="margin-top: 20px; margin-bottom: 90px; text-align: center; padding: 0 4px;">
@@ -222,11 +257,21 @@
     </div>
   </div>
 
-  <!-- MANUAL STAT POPOUT DRAWER -->
+  <!-- MANUAL STAT ENTRY DRAWER -->
   <div id="popout-modal" class="popout-overlay" onclick="closePopout(event)">
     <div class="popout-content">
-      <div class="popout-header" id="popout-player-title">Player Name</div>
+      <div class="popout-header" id="popout-title">Target Name</div>
       <div class="stat-grid" id="popout-stat-grid"></div>
+      <button class="btn-cancel" onclick="closePopout(null, true)">Cancel</button>
+    </div>
+  </div>
+
+  <!-- SEPARATE STAT SUMMARY DRAWER -->
+  <div id="summary-modal" class="popout-overlay" onclick="closeSummaryModal(event)">
+    <div class="popout-content">
+      <div class="popout-header" id="summary-modal-title">Stat Breakdown</div>
+      <div class="popout-summary-box" id="summary-modal-content"></div>
+      <button class="btn-cancel" onclick="closeSummaryModal(null, true)">Close</button>
     </div>
   </div>
 
@@ -236,6 +281,14 @@
       <h2>App & Roster Setup</h2>
       <button class="btn-header primary" onclick="closeSetup()">Done</button>
     </header>
+
+    <div class="form-group">
+      <label>Team Names</label>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <input type="text" id="home-team-name-input" class="form-control" value="Home Team" placeholder="Home Team Name">
+        <input type="text" id="away-team-name-input" class="form-control" value="Opposition" placeholder="Opposition Team Name">
+      </div>
+    </div>
 
     <div class="form-group">
       <label>Custom Stat Labels (Type or tap 🎤 to enter by voice)</label>
@@ -315,7 +368,7 @@
     // DATA STRUCTURES, STATE & LOCALSTORAGE
     // ==========================================
     let currentQuarter = 1;
-    let selectedPlayerId = null;
+    let popoutTarget = null;
     let statHistory = [];
     let voiceFeedHistory = [];
     let lastVoiceProcessedTime = 0;
@@ -328,9 +381,19 @@
 
     let customStats = ["INSIDE 50", "TURNOVER", "CLEARANCE", "SHOT"];
 
+    let teamNames = {
+      home: "Home Team",
+      away: "Opposition"
+    };
+
     let teamColors = {
       home: ["#dc3545", "#0d6efd"],
       away: ["#121212", "#2a2a2a"]
+    };
+
+    let teamUnassignedStats = {
+      home: { Q1: {}, Q2: {}, Q3: {}, Q4: {} },
+      away: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }
     };
 
     function generateDefaultRoster() {
@@ -348,12 +411,18 @@
 
     let players = generateDefaultRoster();
 
+    function sortRosterByNumber() {
+      players.sort((a, b) => (a.number || 0) - (b.number || 0));
+    }
+
     function saveAppState() {
       try {
         const state = {
           players,
           customStats,
+          teamNames,
           teamColors,
+          teamUnassignedStats,
           statHistory,
           voiceFeedHistory,
           currentQuarter
@@ -369,12 +438,15 @@
           const parsed = JSON.parse(saved);
           if (parsed.players) players = parsed.players;
           if (parsed.customStats) customStats = parsed.customStats;
+          if (parsed.teamNames) teamNames = parsed.teamNames;
           if (parsed.teamColors) teamColors = parsed.teamColors;
+          if (parsed.teamUnassignedStats) teamUnassignedStats = parsed.teamUnassignedStats;
           if (parsed.statHistory) statHistory = parsed.statHistory;
           if (parsed.voiceFeedHistory) voiceFeedHistory = parsed.voiceFeedHistory;
           if (parsed.currentQuarter) currentQuarter = parsed.currentQuarter;
         }
       } catch(e){}
+      sortRosterByNumber();
     }
 
     loadAppState();
@@ -447,9 +519,59 @@
     }
 
     // ==========================================
-    // MANUAL PLAYER BUTTONS & DRAWER
+    // MANUAL PLAYER & TEAM BUTTONS & DRAWERS
     // ==========================================
+    function calculateTeamQuarterTotals(teamKey, q) {
+      const qKey = `Q${q}`;
+      let totals = { K:0, H:0, M:0, T:0 };
+      customStats.forEach(s => totals[s] = 0);
+
+      players.filter(p => p.team === teamKey).forEach(p => {
+        const qs = p.stats[qKey] || {};
+        totals.K += qs.K || 0;
+        totals.H += qs.H || 0;
+        totals.M += qs.M || 0;
+        totals.T += qs.T || 0;
+        customStats.forEach(s => totals[s] += (qs[s] || 0));
+      });
+
+      const unassigned = (teamUnassignedStats[teamKey] && teamUnassignedStats[teamKey][qKey]) || {};
+      totals.K += unassigned.K || 0;
+      totals.H += unassigned.H || 0;
+      totals.M += unassigned.M || 0;
+      totals.T += unassigned.T || 0;
+      customStats.forEach(s => totals[s] += (unassigned[s] || 0));
+
+      return totals;
+    }
+
     function renderPlayerButtons() {
+      // 1. Render Team Cards
+      const teamContainer = document.getElementById('team-buttons-container');
+      teamContainer.innerHTML = '';
+
+      ['home', 'away'].forEach(tKey => {
+        const qTot = calculateTeamQuarterTotals(tKey, currentQuarter);
+        const colors = teamColors[tKey];
+        const label = teamNames[tKey];
+
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        card.onclick = () => openPopout('team', tKey);
+
+        card.innerHTML = `
+          <div class="player-card-left" style="background-color: ${colors[0]};">
+            <button class="btn-info-icon" onclick="event.stopPropagation(); openSummaryModal('team', '${tKey}')" title="View Team Stats">ℹ️</button>
+            <span style="overflow:hidden; text-overflow:ellipsis;">${label}</span>
+          </div>
+          <div class="player-card-right" style="background-color: ${colors[1]};">
+            K:${qTot.K} H:${qTot.H} M:${qTot.M} T:${qTot.T}
+          </div>
+        `;
+        teamContainer.appendChild(card);
+      });
+
+      // 2. Render Player List (Sorted by Jumper Number)
       const container = document.getElementById('player-buttons-container');
       container.innerHTML = '';
 
@@ -464,12 +586,13 @@
 
         const card = document.createElement('div');
         card.className = 'player-card';
-        card.onclick = () => openPopout(p.id);
+        card.onclick = () => openPopout('player', p.id);
 
         card.innerHTML = `
           <div class="player-card-left" style="background-color: ${colors[0]};">
             <span class="player-num">#${p.number}</span>
-            <span>${p.name}</span>
+            <button class="btn-info-icon" onclick="event.stopPropagation(); openSummaryModal('player', ${p.id})" title="View Player Stats">ℹ️</button>
+            <span style="overflow:hidden; text-overflow:ellipsis;">${p.name}</span>
           </div>
           <div class="player-card-right" style="background-color: ${colors[1]};">
             K:${k} H:${h} M:${m} T:${t}
@@ -479,24 +602,29 @@
       });
     }
 
-    function openPopout(playerId) {
-      selectedPlayerId = playerId;
-      const player = players.find(p => p.id === playerId);
-      document.getElementById('popout-player-title').innerText = `#${player.number} ${player.name}`;
+    // A. STAT ENTRY DRAWER
+    function openPopout(targetType, targetId) {
+      popoutTarget = { type: targetType, id: targetId };
+      const allPopoutStats = [...popoutBaseStats, ...customStats];
+
+      if (targetType === 'player') {
+        const player = players.find(p => p.id === targetId);
+        document.getElementById('popout-title').innerText = `#${player.number} ${player.name}`;
+      } else {
+        document.getElementById('popout-title').innerText = `🛡️ ${teamNames[targetId]}`;
+      }
 
       const grid = document.getElementById('popout-stat-grid');
       grid.innerHTML = '';
 
-      const allPopoutStats = [...popoutBaseStats, ...customStats];
-      
       allPopoutStats.forEach(label => {
         const btn = document.createElement('button');
         btn.className = 'stat-btn';
         btn.innerText = label;
         btn.onclick = () => {
           const recordKey = statKeyMap[label] || label; 
-          recordStat(playerId, recordKey);
-          closePopout();
+          recordStat(targetType, targetId, recordKey);
+          closePopout(null, true);
         };
         grid.appendChild(btn);
       });
@@ -504,32 +632,107 @@
       document.getElementById('popout-modal').classList.add('active');
     }
 
-    function closePopout(e) {
-      if (!e || e.target.id === 'popout-modal') {
+    function closePopout(e, force = false) {
+      if (force || !e || e.target.id === 'popout-modal') {
         document.getElementById('popout-modal').classList.remove('active');
+        popoutTarget = null;
+      }
+    }
+
+    // B. SEPARATE STAT SUMMARY DRAWER
+    function openSummaryModal(targetType, targetId) {
+      const allPopoutStats = [...popoutBaseStats, ...customStats];
+      const summaryBox = document.getElementById('summary-modal-content');
+      summaryBox.innerHTML = '';
+
+      if (targetType === 'player') {
+        const player = players.find(p => p.id === targetId);
+        document.getElementById('summary-modal-title').innerText = `#${player.number} ${player.name} Stats`;
+
+        let html = `<div style="font-weight:bold; color:#aaa; margin-bottom:8px; text-align:center;">Q${currentQuarter} Summary vs Full Match</div>`;
+        allPopoutStats.forEach(stLabel => {
+          const key = statKeyMap[stLabel] || stLabel;
+          const qVal = (player.stats[`Q${currentQuarter}`] && player.stats[`Q${currentQuarter}`][key]) || 0;
+          
+          let totalVal = 0;
+          [1,2,3,4].forEach(q => {
+            totalVal += (player.stats[`Q${q}`] && player.stats[`Q${q}`][key]) || 0;
+          });
+
+          html += `
+            <div class="popout-summary-row">
+              <span>${stLabel}</span>
+              <span>Q${currentQuarter}: <span class="val">${qVal}</span> | Total: <span class="val">${totalVal}</span></span>
+            </div>
+          `;
+        });
+        summaryBox.innerHTML = html;
+
+      } else {
+        const tName = teamNames[targetId];
+        document.getElementById('summary-modal-title').innerText = `🛡️ ${tName} Stats`;
+
+        let html = `<div style="font-weight:bold; color:#aaa; margin-bottom:8px; text-align:center;">Q${currentQuarter} Team Total vs Full Match</div>`;
+        allPopoutStats.forEach(stLabel => {
+          const key = statKeyMap[stLabel] || stLabel;
+          const qTot = calculateTeamQuarterTotals(targetId, currentQuarter)[key] || 0;
+          
+          let fullTot = 0;
+          [1,2,3,4].forEach(q => {
+            fullTot += calculateTeamQuarterTotals(targetId, q)[key] || 0;
+          });
+
+          html += `
+            <div class="popout-summary-row">
+              <span>${stLabel}</span>
+              <span>Q${currentQuarter}: <span class="val">${qTot}</span> | Total: <span class="val">${fullTot}</span></span>
+            </div>
+          `;
+        });
+        summaryBox.innerHTML = html;
+      }
+
+      document.getElementById('summary-modal').classList.add('active');
+    }
+
+    function closeSummaryModal(e, force = false) {
+      if (force || !e || e.target.id === 'summary-modal') {
+        document.getElementById('summary-modal').classList.remove('active');
       }
     }
 
     // ==========================================
     // STAT RECORDING & UNDO ENGINE
     // ==========================================
-    function recordStat(playerId, statKey) {
-      const player = players.find(p => p.id === playerId);
-      if (!player) return;
-
+    function recordStat(targetType, id, statKey) {
       const qKey = `Q${currentQuarter}`;
-      if (!player.stats[qKey][statKey]) player.stats[qKey][statKey] = 0;
-      player.stats[qKey][statKey]++;
 
-      statHistory.push({ playerId, quarter: currentQuarter, statKey });
-      
+      if (targetType === 'player') {
+        const player = players.find(p => p.id === id);
+        if (!player) return;
+
+        if (!player.stats[qKey][statKey]) player.stats[qKey][statKey] = 0;
+        player.stats[qKey][statKey]++;
+
+        statHistory.push({ targetType: 'player', id, quarter: currentQuarter, statKey });
+        
+        const fullStatName = baseStatFullNames[statKey] || statKey;
+        pushVoiceFeed(`${player.name} — ${fullStatName}`, false);
+
+      } else if (targetType === 'team') {
+        if (!teamUnassignedStats[id][qKey][statKey]) teamUnassignedStats[id][qKey][statKey] = 0;
+        teamUnassignedStats[id][qKey][statKey]++;
+
+        statHistory.push({ targetType: 'team', id, quarter: currentQuarter, statKey });
+
+        const fullStatName = baseStatFullNames[statKey] || statKey;
+        pushVoiceFeed(`${teamNames[id]} — ${fullStatName}`, false);
+      }
+
+      saveAppState();
       playTone('success');
       triggerHaptic('success');
-
       renderPlayerButtons();
-      
-      const fullStatName = baseStatFullNames[statKey] || statKey;
-      pushVoiceFeed(`${player.name} — ${fullStatName}`, false);
     }
 
     function undoLastStat() {
@@ -540,17 +743,27 @@
       }
 
       const last = statHistory.pop();
-      const player = players.find(p => p.id === last.playerId);
-      if (player && player.stats[`Q${last.quarter}`][last.statKey] > 0) {
-        player.stats[`Q${last.quarter}`][last.statKey]--;
-        
-        playTone('error');
-        triggerHaptic('success');
-        renderPlayerButtons();
-        
-        const fullStatName = baseStatFullNames[last.statKey] || last.statKey;
-        pushVoiceFeed(`UNDO: ${player.name} ${fullStatName}`, true);
+      const qKey = `Q${last.quarter}`;
+
+      if (last.targetType === 'player') {
+        const player = players.find(p => p.id === last.id);
+        if (player && player.stats[qKey][last.statKey] > 0) {
+          player.stats[qKey][last.statKey]--;
+          const fullStatName = baseStatFullNames[last.statKey] || last.statKey;
+          pushVoiceFeed(`UNDO: ${player.name} ${fullStatName}`, true);
+        }
+      } else if (last.targetType === 'team') {
+        if (teamUnassignedStats[last.id][qKey][last.statKey] > 0) {
+          teamUnassignedStats[last.id][qKey][last.statKey]--;
+          const fullStatName = baseStatFullNames[last.statKey] || last.statKey;
+          pushVoiceFeed(`UNDO: ${teamNames[last.id]} ${fullStatName}`, true);
+        }
       }
+
+      saveAppState();
+      playTone('error');
+      triggerHaptic('success');
+      renderPlayerButtons();
     }
 
     // ==========================================
@@ -654,47 +867,58 @@
         return;
       }
 
-      // 2. Match Player via Name, Aliases, OR Jumper Number
-      let matchedPlayer = null;
+      // 2. Match Target (Team or Player)
+      let matchedTarget = null;
 
-      const sortedRoster = [...players].sort((a, b) => {
-        const lenA = Math.max(a.name.length, (a.alias1 || '').length, (a.alias2 || '').length, (a.alias3 || '').length);
-        const lenB = Math.max(b.name.length, (b.alias1 || '').length, (b.alias2 || '').length, (b.alias3 || '').length);
-        return lenB - lenA;
-      });
+      const homeNameClean = teamNames.home.toLowerCase().trim();
+      const awayNameClean = teamNames.away.toLowerCase().trim();
 
-      for (const p of sortedRoster) {
-        const pName = p.name.toLowerCase().trim();
-        const a1 = (p.alias1 || '').toLowerCase().trim();
-        const a2 = (p.alias2 || '').toLowerCase().trim();
-        const a3 = (p.alias3 || '').toLowerCase().trim();
+      if (clean.includes('home') || clean.includes(homeNameClean)) {
+        matchedTarget = { type: 'team', id: 'home' };
+      } else if (clean.includes('away') || clean.includes('opposition') || clean.includes(awayNameClean)) {
+        matchedTarget = { type: 'team', id: 'away' };
+      }
 
-        if (
-          clean.includes(pName) || 
-          (a1 !== '' && clean.includes(a1)) ||
-          (a2 !== '' && clean.includes(a2)) ||
-          (a3 !== '' && clean.includes(a3))
-        ) {
-          matchedPlayer = p;
-          break;
+      if (!matchedTarget) {
+        const sortedRoster = [...players].sort((a, b) => {
+          const lenA = Math.max(a.name.length, (a.alias1 || '').length, (a.alias2 || '').length, (a.alias3 || '').length);
+          const lenB = Math.max(b.name.length, (b.alias1 || '').length, (b.alias2 || '').length, (b.alias3 || '').length);
+          return lenB - lenA;
+        });
+
+        for (const p of sortedRoster) {
+          const pName = p.name.toLowerCase().trim();
+          const a1 = (p.alias1 || '').toLowerCase().trim();
+          const a2 = (p.alias2 || '').toLowerCase().trim();
+          const a3 = (p.alias3 || '').toLowerCase().trim();
+
+          if (
+            clean.includes(pName) || 
+            (a1 !== '' && clean.includes(a1)) ||
+            (a2 !== '' && clean.includes(a2)) ||
+            (a3 !== '' && clean.includes(a3))
+          ) {
+            matchedTarget = { type: 'player', id: p.id };
+            break;
+          }
         }
       }
 
-      if (!matchedPlayer) {
+      if (!matchedTarget) {
         const numbersInSpeech = clean.match(/\b\d+\b/g);
         if (numbersInSpeech) {
           for (const numStr of numbersInSpeech) {
             const numVal = parseInt(numStr, 10);
             const foundByNum = players.find(p => p.number === numVal);
             if (foundByNum) {
-              matchedPlayer = foundByNum;
+              matchedTarget = { type: 'player', id: foundByNum.id };
               break;
             }
           }
         }
       }
 
-      // 3. Match Stat (Added "hans" to keywords)
+      // 3. Match Stat
       let matchedStat = null;
       const spokenStatMap = [
         { keywords: ["handball", "handpass", "hands", "hans"], statKey: "H" },
@@ -720,12 +944,15 @@
       }
 
       // 4. Execution
-      if (matchedPlayer && matchedStat) {
-        recordStat(matchedPlayer.id, matchedStat);
-      } else if (!matchedPlayer && matchedStat) {
-        handleVoiceError(`Player not found in: "${clean}"`);
-      } else if (matchedPlayer && !matchedStat) {
-        handleVoiceError(`Stat not found for ${matchedPlayer.name}`);
+      if (matchedTarget && matchedStat) {
+        recordStat(matchedTarget.type, matchedTarget.id, matchedStat);
+      } else if (!matchedTarget && matchedStat) {
+        handleVoiceError(`Target not found in: "${clean}"`);
+      } else if (matchedTarget && !matchedStat) {
+        const targetName = matchedTarget.type === 'player' ? 
+          players.find(p => p.id === matchedTarget.id).name : 
+          teamNames[matchedTarget.id];
+        handleVoiceError(`Stat not found for ${targetName}`);
       } else {
         handleVoiceError(`Unrecognized: "${clean}"`);
       }
@@ -772,6 +999,9 @@
     // SETUP & EDIT MODAL
     // ==========================================
     function openSetup() {
+      document.getElementById('home-team-name-input').value = teamNames.home;
+      document.getElementById('away-team-name-input').value = teamNames.away;
+
       customStats.forEach((st, idx) => {
         document.getElementById(`custom-stat-${idx}`).value = st;
       });
@@ -805,7 +1035,7 @@
         
         row.innerHTML = `
           <div style="display: grid; grid-template-columns: 45px 1fr 70px; gap: 6px; align-items: center;">
-            <input type="number" class="form-control" value="${p.number}" onchange="players[${idx}].number = parseInt(this.value); saveAppState();">
+            <input type="number" class="form-control" value="${p.number}" onchange="players[${idx}].number = parseInt(this.value) || 0; saveAppState();">
             <input type="text" class="form-control" value="${p.name}" placeholder="Display Name" onchange="players[${idx}].name = this.value; saveAppState();">
             <button type="button" class="form-control team-select-btn" id="team-btn-${idx}" style="background-color: ${currentBg}; color: #fff;" onclick="togglePlayerTeam(${idx})">
               ${p.team.toUpperCase()}
@@ -918,11 +1148,15 @@
     }
 
     function closeSetup() {
+      teamNames.home = document.getElementById('home-team-name-input').value || "Home Team";
+      teamNames.away = document.getElementById('away-team-name-input').value || "Opposition";
+
       [0,1,2,3].forEach(idx => {
         customStats[idx] = document.getElementById(`custom-stat-${idx}`).value.toUpperCase() || `ST${idx+1}`;
       });
 
       updateSetupColorPreviews();
+      sortRosterByNumber();
       saveAppState();
       document.getElementById('setup-modal').classList.remove('active');
       renderPlayerButtons();
@@ -945,7 +1179,7 @@
       const table = document.getElementById('summary-table');
       const allStatsToDisplay = [...baseStats, ...customStats];
 
-      let html = '<thead><tr><th>#</th><th>Player</th><th>Disp</th>';
+      let html = '<thead><tr><th>#</th><th>Player / Team</th><th>Disp</th>';
       allStatsToDisplay.forEach(s => html += '<th>' + s + '</th>');
       html += '</tr></thead><tbody>';
 
@@ -953,7 +1187,6 @@
 
       teams.forEach(tKey => {
         const teamPlayers = players.filter(p => p.team === tKey);
-        if (teamPlayers.length === 0) return;
 
         let teamTotK = 0, teamTotH = 0;
         let teamStatTotals = {};
@@ -981,8 +1214,30 @@
           html += '</tr>';
         });
 
+        let unassignedTotK = 0, unassignedTotH = 0;
+        let unassignedStatTotals = {};
+        allStatsToDisplay.forEach(s => unassignedStatTotals[s] = 0);
+
+        [1,2,3,4].forEach(q => {
+          const uQs = (teamUnassignedStats[tKey] && teamUnassignedStats[tKey][`Q${q}`]) || {};
+          unassignedTotK += uQs.K || 0;
+          unassignedTotH += uQs.H || 0;
+          allStatsToDisplay.forEach(s => unassignedStatTotals[s] += (uQs[s] || 0));
+        });
+
+        const unassignedDisposals = unassignedTotK + unassignedTotH;
+        if (unassignedDisposals > 0 || Object.values(unassignedStatTotals).some(v => v > 0)) {
+          teamTotK += unassignedTotK;
+          teamTotH += unassignedTotH;
+          allStatsToDisplay.forEach(s => teamStatTotals[s] += unassignedStatTotals[s]);
+
+          html += '<tr style="color:#aaa; font-style:italic;"><td>-</td><td style="text-align:left;">[' + teamNames[tKey] + ' Unassigned]</td><td>' + unassignedDisposals + '</td>';
+          allStatsToDisplay.forEach(s => html += '<td>' + unassignedStatTotals[s] + '</td>');
+          html += '</tr>';
+        }
+
         const teamDisposals = teamTotK + teamTotH;
-        html += '<tr class="team-total-row"><td colspan="2" style="text-align:left;">TOTAL (' + tKey.toUpperCase() + ')</td><td>' + teamDisposals + '</td>';
+        html += '<tr class="team-total-row"><td colspan="2" style="text-align:left;">TOTAL (' + teamNames[tKey].toUpperCase() + ')</td><td>' + teamDisposals + '</td>';
         allStatsToDisplay.forEach(s => html += '<td>' + teamStatTotals[s] + '</td>');
         html += '</tr>';
       });
@@ -1011,6 +1266,24 @@
         csv += p.number + ',"' + p.name + '",' + p.team + ',' + disposals + ',' + allStatsToDisplay.map(s => statTotals[s]).join(",") + "\n";
       });
 
+      ['home', 'away'].forEach(tKey => {
+        let uTotK = 0, uTotH = 0;
+        let uStatTotals = {};
+        allStatsToDisplay.forEach(s => uStatTotals[s] = 0);
+
+        [1,2,3,4].forEach(q => {
+          const uQs = (teamUnassignedStats[tKey] && teamUnassignedStats[tKey][`Q${q}`]) || {};
+          uTotK += uQs.K || 0;
+          uTotH += uQs.H || 0;
+          allStatsToDisplay.forEach(s => uStatTotals[s] += (uQs[s] || 0));
+        });
+
+        const uDisposals = uTotK + uTotH;
+        if (uDisposals > 0 || Object.values(uStatTotals).some(v => v > 0)) {
+          csv += '-,"' + teamNames[tKey] + ' Unassigned",' + tKey + ',' + uDisposals + ',' + allStatsToDisplay.map(s => uStatTotals[s]).join(",") + "\n";
+        }
+      });
+
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1032,15 +1305,18 @@
     function executeReset(type) {
       if (type === 'stats') {
         players.forEach(p => p.stats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} });
+        teamUnassignedStats = { home: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }, away: { Q1: {}, Q2: {}, Q3: {}, Q4: {} } };
         statHistory = [];
         voiceFeedHistory = [];
         saveAppState();
         alert("Match stats reset successfully. Roster preserved.");
       } else if (type === 'all') {
         players = generateDefaultRoster();
+        teamUnassignedStats = { home: { Q1: {}, Q2: {}, Q3: {}, Q4: {} }, away: { Q1: {}, Q2: {}, Q3: {}, Q4: {} } };
         statHistory = [];
         voiceFeedHistory = [];
         customStats = ["INSIDE 50", "TURNOVER", "CLEARANCE", "SHOT"];
+        teamNames = { home: "Home Team", away: "Opposition" };
         teamColors = { home: ["#dc3545", "#0d6efd"], away: ["#121212", "#2a2a2a"] };
         localStorage.removeItem('voicestatz_state');
         alert("Full reset complete. Stats and roster restored to defaults.");

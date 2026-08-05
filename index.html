@@ -18,7 +18,6 @@
     :root {
       --bg-dark: #121212;
       --card-bg: #1e1e1e;
-      --accent-blue: #0d6efd;
       --accent-green: #198754;
       --accent-red: #dc3545;
       --text-light: #f8f9fa;
@@ -34,7 +33,7 @@
       overflow-x: hidden; 
     }
 
-    /* Header Nav with iOS Notch Safe Area Padding */
+    /* Standardized Header Nav */
     header { 
       background: #000; 
       padding: max(12px, env(safe-area-inset-top)) 12px 12px 12px; 
@@ -46,14 +45,15 @@
       z-index: 100; 
       border-bottom: 1px solid var(--border-color); 
     }
-    header h1 { font-size: 1.2rem; font-weight: 800; color: #fff; text-transform: uppercase; }
-    .btn-header { background: #333; color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; text-transform: uppercase; }
-    .btn-header.primary { background: var(--accent-blue); border-color: var(--accent-blue); }
+    header h1 { font-size: 1.2rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+    .header-btn-group { display: flex; gap: 8px; align-items: center; }
+    .btn-header { background: #333; color: #fff; border: 1px solid #555; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; text-transform: uppercase; }
+    .btn-header.primary { background: var(--accent-green); border-color: var(--accent-green); }
 
     /* Quarter Selector */
     .quarter-bar { display: flex; justify-content: space-around; background: #181818; padding: 8px; border-bottom: 1px solid var(--border-color); align-items: center; }
     .q-btn { flex: 1; margin: 0 4px; padding: 8px; background: #2a2a2a; color: #aaa; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; }
-    .q-btn.active { background: var(--accent-blue); color: #fff; }
+    .q-btn.active { background: var(--accent-green); color: #fff; }
 
     /* Voice Page Stat Reminders Header */
     .stat-reminders-grid {
@@ -68,10 +68,10 @@
       background: #262626;
       border: 1px solid #3d3d3d;
       border-radius: 4px;
-      padding: 4px 2px;
+      padding: 6px 2px;
       font-size: 0.7rem;
       font-weight: bold;
-      color: #0d6efd;
+      color: #ffffff;
       text-align: center;
       text-transform: uppercase;
       white-space: nowrap;
@@ -130,24 +130,24 @@
     .popout-summary-box { background: #141414; border: 1px solid #333; border-radius: 8px; padding: 10px; font-size: 0.85rem; }
     .popout-summary-row { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 6px 0; text-transform: uppercase; }
     .popout-summary-row:last-child { border-bottom: none; }
-    .popout-summary-row span.val { font-weight: bold; color: var(--accent-blue); }
+    .popout-summary-row span.val { font-weight: bold; color: var(--accent-green); }
 
     .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .stat-btn { background: #2c2c2c; color: #fff; border: 1px solid #444; padding: 14px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-    .stat-btn:active { background: var(--accent-blue); }
+    .stat-btn:active { background: var(--accent-green); }
 
     .btn-cancel { width: 100%; margin-top: 14px; background: #333; color: #fff; border: 1px solid #555; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
 
     /* Voice Page Centered Scrollable Feed */
     .voice-feed-container { 
-      height: 250px; 
+      height: 220px; 
       display: flex; 
       flex-direction: column; 
       align-items: center; 
       gap: 10px; 
       margin: 10px 0; 
       overflow-y: auto; 
-      padding: 90px 10px;
+      padding: 80px 10px;
       border: 1px solid #222;
       border-radius: 12px;
       background: #141414;
@@ -206,10 +206,11 @@
       z-index: 150;
     }
 
+    /* PTT Button - 50% Taller (135px) and Green Default */
     .ptt-btn {
-      width: 100%; height: 90px; background: var(--accent-blue); color: #fff; font-size: 1.4rem; font-weight: 900;
-      border: none; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); touch-action: manipulation;
-      text-transform: uppercase;
+      width: 100%; height: 135px; background: var(--accent-green); color: #fff; font-size: 1.5rem; font-weight: 900;
+      border: none; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); touch-action: manipulation;
+      text-transform: uppercase; letter-spacing: 1px;
     }
     .ptt-btn.listening { background: var(--accent-red); animation: pulse 1s infinite; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -222,9 +223,14 @@
       background: #121212; 
       z-index: 300; 
       overflow-y: auto; 
-      padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)) 16px; 
     }
     .modal-overlay.active { display: block; }
+    
+    .setup-body-content {
+      padding: 16px;
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 4px; text-transform: uppercase; }
     .form-control { width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 0.95rem; }
@@ -260,7 +266,7 @@
     .table-responsive { overflow-x: auto; margin-top: 10px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
     th, td { border: 1px solid #333; padding: 5px 3px; white-space: nowrap; text-transform: uppercase; }
-    th { background: #222; color: #007bff; }
+    th { background: #222; color: var(--accent-green); }
     tr:nth-child(even) { background: #181818; }
     tr.team-total-row { background: #2a2a2a; font-weight: bold; color: var(--text-light); }
   </style>
@@ -270,10 +276,10 @@
   <!-- PAGE 1: MANUAL / PLAYERS VIEW -->
   <div id="page-players" class="view-page active">
     <header>
-      <h1>VoiceStatz v2.7</h1>
-      <div>
-        <button class="btn-header primary" onclick="switchPage('page-voice')">Voice Mode</button>
-        <button class="btn-header" onclick="openSetup()">Edit</button>
+      <h1>VOICESTATZ</h1>
+      <div class="header-btn-group">
+        <button class="btn-header primary" onclick="switchPage('page-voice')">VOICE MODE</button>
+        <button class="btn-header" onclick="openSetup()">EDIT</button>
       </div>
     </header>
 
@@ -293,7 +299,7 @@
     <div class="player-list" id="player-buttons-container"></div>
 
     <div style="margin-top: 20px; margin-bottom: 90px; text-align: center; padding: 0 4px;">
-      <button class="btn-header primary" style="width:100%; padding: 12px; font-size: 1rem;" onclick="switchPage('page-summary')">Summary & Export</button>
+      <button class="btn-header primary" style="width:100%; padding: 14px; font-size: 1rem;" onclick="switchPage('page-summary')">SUMMARY & EXPORT</button>
     </div>
 
     <div class="floating-undo-container">
@@ -304,8 +310,11 @@
   <!-- PAGE 2: VOICE ENTRY VIEW -->
   <div id="page-voice" class="view-page">
     <header>
-      <button class="btn-header" onclick="switchPage('page-players')">← Players/Manual</button>
-      <button class="btn-header" onclick="openSetup()">Edit</button>
+      <h1>VOICESTATZ</h1>
+      <div class="header-btn-group">
+        <button class="btn-header primary" onclick="switchPage('page-players')">PLAYERS</button>
+        <button class="btn-header" onclick="openSetup()">EDIT</button>
+      </div>
     </header>
 
     <div class="quarter-bar">
@@ -329,17 +338,15 @@
   <!-- PAGE 3: SUMMARY & EXPORT VIEW -->
   <div id="page-summary" class="view-page">
     <header>
-      <h1>Match Summary</h1>
-      <div>
-        <button class="btn-header" onclick="switchPage('page-players')">Manual</button>
-        <button class="btn-header" onclick="switchPage('page-voice')">Voice</button>
-        <button class="btn-header" onclick="openSetup()">Setup</button>
+      <h1>VOICESTATZ</h1>
+      <div class="header-btn-group">
+        <button class="btn-header" onclick="navigateBack()">BACK</button>
       </div>
     </header>
 
-    <div style="display:flex; gap:10px; margin: 12px 0;">
-      <button class="btn-header primary" style="flex:1;" onclick="exportCSV()">Export CSV</button>
-      <button class="btn-header" style="background:var(--accent-red); border-color:var(--accent-red);" onclick="openResetModal()">Reset Options</button>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin: 12px 0;">
+      <button class="btn-header primary" style="padding: 12px; font-size: 0.95rem;" onclick="exportCSV()">EXPORT CSV</button>
+      <button class="btn-header" style="background:var(--accent-red); border-color:var(--accent-red); padding: 12px; font-size: 0.95rem;" onclick="openResetModal()">RESET OPTIONS</button>
     </div>
 
     <div class="table-responsive">
@@ -350,141 +357,148 @@
   <!-- MANUAL STAT ENTRY DRAWER -->
   <div id="popout-modal" class="popout-overlay" onclick="closePopout(event)">
     <div class="popout-content">
-      <div class="popout-header" id="popout-title">Target Name</div>
+      <div class="popout-header" id="popout-title">TARGET NAME</div>
       <div class="stat-grid" id="popout-stat-grid"></div>
-      <button class="btn-cancel" onclick="closePopout(null, true)">Cancel</button>
+      <button class="btn-cancel" onclick="closePopout(null, true)">CANCEL</button>
     </div>
   </div>
 
   <!-- SEPARATE STAT SUMMARY DRAWER -->
   <div id="summary-modal" class="popout-overlay" onclick="closeSummaryModal(event)">
     <div class="popout-content">
-      <div class="popout-header" id="summary-modal-title">Stat Breakdown</div>
+      <div class="popout-header" id="summary-modal-title">STAT BREAKDOWN</div>
       <div class="popout-summary-box" id="summary-modal-content"></div>
-      <button class="btn-cancel" onclick="closeSummaryModal(null, true)">Close</button>
+      <button class="btn-cancel" onclick="closeSummaryModal(null, true)">CLOSE</button>
     </div>
   </div>
 
   <!-- SETUP / EDIT MODAL -->
   <div id="setup-modal" class="modal-overlay">
-    <header style="margin-bottom:15px; padding:0; background:transparent; border:none;">
-      <h2>App & Roster Setup</h2>
-      <button class="btn-header primary" onclick="closeSetup()">Done</button>
+    <header>
+      <h1>VOICESTATZ</h1>
+      <div class="header-btn-group">
+        <button class="btn-header" onclick="closeSetup()">BACK</button>
+      </div>
     </header>
 
-    <!-- Team Settings & Voice Aliases -->
-    <div class="form-group">
-      <label>Teams & Voice Recognition Aliases</label>
-      
-      <!-- Home Team Setup Card -->
-      <div class="team-setup-card">
-        <div class="team-setup-header" id="home-setup-badge">HOME</div>
-        <input type="text" id="home-team-name-input" class="form-control uppercase-input" value="HOME" placeholder="Home Team Display Name" onchange="updateSetupColorPreviews()">
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
-          <div style="display:flex; gap:2px;">
-            <input type="text" id="home-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Alias 1" onchange="saveAppState()">
-            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 1)">🎤</button>
+    <div class="setup-body-content">
+      <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 4px; text-transform: uppercase;">TEAMS & ROSTER SETUP</h2>
+      <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 16px;">Type or tap 🎤 to enter names and voice triggers.</p>
+
+      <!-- Team Settings & Voice Aliases -->
+      <div class="form-group">
+        <label>Teams & Voice Recognition Aliases</label>
+        
+        <!-- Home Team Setup Card -->
+        <div class="team-setup-card">
+          <div class="team-setup-header" id="home-setup-badge">HOME</div>
+          <input type="text" id="home-team-name-input" class="form-control uppercase-input" value="HOME" placeholder="Home Team Display Name" onchange="updateSetupColorPreviews()">
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
+            <div style="display:flex; gap:2px;">
+              <input type="text" id="home-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Alias 1" onchange="saveAppState()">
+              <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 1)">🎤</button>
+            </div>
+            <div style="display:flex; gap:2px;">
+              <input type="text" id="home-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Alias 2" onchange="saveAppState()">
+              <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 2)">🎤</button>
+            </div>
+            <div style="display:flex; gap:2px;">
+              <input type="text" id="home-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Alias 3" onchange="saveAppState()">
+              <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 3)">🎤</button>
+            </div>
           </div>
-          <div style="display:flex; gap:2px;">
-            <input type="text" id="home-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Alias 2" onchange="saveAppState()">
-            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 2)">🎤</button>
-          </div>
-          <div style="display:flex; gap:2px;">
-            <input type="text" id="home-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Alias 3" onchange="saveAppState()">
-            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 3)">🎤</button>
+        </div>
+
+        <!-- Away Team Setup Card -->
+        <div class="team-setup-card">
+          <div class="team-setup-header" id="away-setup-badge">OPP</div>
+          <input type="text" id="away-team-name-input" class="form-control uppercase-input" value="OPP" placeholder="Opposition Team Display Name" onchange="updateSetupColorPreviews()">
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
+            <div style="display:flex; gap:2px;">
+              <input type="text" id="away-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Alias 1" onchange="saveAppState()">
+              <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 1)">🎤</button>
+            </div>
+            <div style="display:flex; gap:2px;">
+              <input type="text" id="away-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Alias 2" onchange="saveAppState()">
+              <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 2)">🎤</button>
+            </div>
+            <div style="display:flex; gap:2px;">
+              <input type="text" id="away-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Alias 3" onchange="saveAppState()">
+              <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 3)">🎤</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Away Team Setup Card -->
-      <div class="team-setup-card">
-        <div class="team-setup-header" id="away-setup-badge">OPP</div>
-        <input type="text" id="away-team-name-input" class="form-control uppercase-input" value="OPP" placeholder="Opposition Team Display Name" onchange="updateSetupColorPreviews()">
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
-          <div style="display:flex; gap:2px;">
-            <input type="text" id="away-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Alias 1" onchange="saveAppState()">
-            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 1)">🎤</button>
+      <div class="form-group">
+        <label>Custom Stat Labels (Type or tap 🎤 to enter by voice)</label>
+        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+          <div style="display:flex; gap:4px;">
+            <input type="text" id="custom-stat-0" class="form-control uppercase-input" value="INSIDE 50">
+            <button type="button" class="btn-header primary" onclick="listenForCustomStat(0)">🎤</button>
           </div>
-          <div style="display:flex; gap:2px;">
-            <input type="text" id="away-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Alias 2" onchange="saveAppState()">
-            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 2)">🎤</button>
+          <div style="display:flex; gap:4px;">
+            <input type="text" id="custom-stat-1" class="form-control uppercase-input" value="TURNOVER">
+            <button type="button" class="btn-header primary" onclick="listenForCustomStat(1)">🎤</button>
           </div>
-          <div style="display:flex; gap:2px;">
-            <input type="text" id="away-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Alias 3" onchange="saveAppState()">
-            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 3)">🎤</button>
+          <div style="display:flex; gap:4px;">
+            <input type="text" id="custom-stat-2" class="form-control uppercase-input" value="CLEARANCE">
+            <button type="button" class="btn-header primary" onclick="listenForCustomStat(2)">🎤</button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Custom Stat Labels (Type or tap 🎤 to enter by voice)</label>
-      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-        <div style="display:flex; gap:4px;">
-          <input type="text" id="custom-stat-0" class="form-control uppercase-input" value="INSIDE 50">
-          <button type="button" class="btn-header primary" onclick="listenForCustomStat(0)">🎤</button>
-        </div>
-        <div style="display:flex; gap:4px;">
-          <input type="text" id="custom-stat-1" class="form-control uppercase-input" value="TURNOVER">
-          <button type="button" class="btn-header primary" onclick="listenForCustomStat(1)">🎤</button>
-        </div>
-        <div style="display:flex; gap:4px;">
-          <input type="text" id="custom-stat-2" class="form-control uppercase-input" value="CLEARANCE">
-          <button type="button" class="btn-header primary" onclick="listenForCustomStat(2)">🎤</button>
-        </div>
-        <div style="display:flex; gap:4px;">
-          <input type="text" id="custom-stat-3" class="form-control uppercase-input" value="SHOT">
-          <button type="button" class="btn-header primary" onclick="listenForCustomStat(3)">🎤</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Team Colours (2 Colours per team)</label>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <div>
-          <span style="font-size:0.8rem;">Home Team</span>
-          <div style="display:flex; gap:6px; margin-top:4px;">
-            <input type="color" id="home-c1" class="form-control color-swatch-input" value="#dc3545" onchange="updateSetupColorPreviews()">
-            <input type="color" id="home-c2" class="form-control color-swatch-input" value="#0d6efd" onchange="updateSetupColorPreviews()">
-          </div>
-        </div>
-        <div>
-          <span style="font-size:0.8rem;">Opposition Team</span>
-          <div style="display:flex; gap:6px; margin-top:4px;">
-            <input type="color" id="away-c1" class="form-control color-swatch-input" value="#121212" onchange="updateSetupColorPreviews()">
-            <input type="color" id="away-c2" class="form-control color-swatch-input" value="#2a2a2a" onchange="updateSetupColorPreviews()">
+          <div style="display:flex; gap:4px;">
+            <input type="text" id="custom-stat-3" class="form-control uppercase-input" value="SHOT">
+            <button type="button" class="btn-header primary" onclick="listenForCustomStat(3)">🎤</button>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="form-group">
-      <label>Roster (Num | Display Name | Team | Voice Aliases 🎤)</label>
-      <div id="roster-editor-list"></div>
-      <button class="btn-header" style="width:100%; margin-top:10px;" onclick="addRosterRow()">+ Add Player</button>
-    </div>
+      <div class="form-group">
+        <label>Team Colours (Tap to change)</label>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div>
+            <span style="font-size:0.8rem; color:#aaa;">Home Team</span>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <input type="color" id="home-c1" class="form-control color-swatch-input" value="#dc3545" onchange="updateSetupColorPreviews()">
+              <input type="color" id="home-c2" class="form-control color-swatch-input" value="#0d6efd" onchange="updateSetupColorPreviews()">
+            </div>
+          </div>
+          <div>
+            <span style="font-size:0.8rem; color:#aaa;">Opposition Team</span>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <input type="color" id="away-c1" class="form-control color-swatch-input" value="#121212" onchange="updateSetupColorPreviews()">
+              <input type="color" id="away-c2" class="form-control color-swatch-input" value="#2a2a2a" onchange="updateSetupColorPreviews()">
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <div style="margin-top:20px;">
-      <button class="btn-header primary" style="width:100%; padding:12px; font-size:1rem;" onclick="closeSetup()">Done</button>
+      <div class="form-group">
+        <label>Roster (Num | Display Name | Team | Voice Aliases 🎤)</label>
+        <div id="roster-editor-list"></div>
+        <button class="btn-header" style="width:100%; margin-top:10px;" onclick="addRosterRow()">+ ADD PLAYER</button>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="btn-header primary" style="width:100%; padding:14px; font-size:1rem;" onclick="closeSetup()">DONE</button>
+      </div>
     </div>
   </div>
 
   <!-- RESET SELECTION MODAL -->
   <div id="reset-modal" class="popout-overlay" onclick="closeResetModal(event)">
     <div class="popout-content" style="text-align: center;">
-      <div class="popout-header">Select Reset Type</div>
+      <div class="popout-header">SELECT RESET TYPE</div>
       <p style="font-size: 0.9rem; color: #ccc; margin-bottom: 20px;">Choose whether to clear stats for a new game or completely wipe all roster settings.</p>
       
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <button class="btn-header primary" style="padding: 14px; font-size: 1rem;" onclick="executeReset('stats')">
-          Reset Match Stats Only
+          RESET MATCH STATS ONLY
         </button>
         <button class="btn-header" style="background: var(--accent-red); border-color: var(--accent-red); padding: 14px; font-size: 1rem;" onclick="executeReset('all')">
-          Reset Everything (Stats + Roster)
+          RESET EVERYTHING (STATS + ROSTER)
         </button>
         <button class="btn-header" style="padding: 10px; margin-top: 5px;" onclick="closeResetModal()">
-          Cancel
+          CANCEL
         </button>
       </div>
     </div>
@@ -500,6 +514,10 @@
     let voiceFeedHistory = [];
     let lastVoiceProcessedTime = 0;
     let lastProcessedText = "";
+    
+    // Track previous page view for dynamic back navigation
+    let previousPageId = 'page-players';
+    let currentPageId = 'page-players';
 
     const baseStats = ["K", "H", "M", "T"];
     const baseStatFullNames = { "K": "KICK", "H": "HANDBALL", "M": "MARK", "T": "TACKLE" };
@@ -637,10 +655,18 @@
     // NAVIGATION & QUARTER SELECTOR
     // ==========================================
     function switchPage(pageId) {
+      if (pageId !== currentPageId) {
+        previousPageId = currentPageId;
+        currentPageId = pageId;
+      }
       document.querySelectorAll('.view-page').forEach(p => p.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
       if (pageId === 'page-voice') renderVoiceStatReminders();
       if (pageId === 'page-summary') renderSummaryTable();
+    }
+
+    function navigateBack() {
+      switchPage(previousPageId || 'page-players');
     }
 
     function setQuarter(q) {
@@ -1429,7 +1455,7 @@
       html += '</tr><tr><th></th><th></th>';
 
       allStats.forEach(() => {
-        html += '<th style="border-left: 2px solid #555;">Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th style="font-weight:bold; color:#0d6efd;">TOT</th>';
+        html += '<th style="border-left: 2px solid #555;">Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th style="font-weight:bold; color:var(--accent-green);">TOT</th>';
       });
 
       html += '</tr></thead><tbody>';
@@ -1459,7 +1485,7 @@
               teamQStats[`Q${q}`][s] += val;
             });
 
-            html += `<td style="font-weight:bold; color:#0d6efd;">${pTot}</td>`;
+            html += `<td style="font-weight:bold; color:var(--accent-green);">${pTot}</td>`;
           });
           html += '</tr>';
         });
@@ -1502,7 +1528,7 @@
           html += `<td>${teamQStats.Q2[s]}</td>`;
           html += `<td>${teamQStats.Q3[s]}</td>`;
           html += `<td>${teamQStats.Q4[s]}</td>`;
-          html += `<td style="font-weight:bold; color:#0d6efd;">${grandTot}</td>`;
+          html += `<td style="font-weight:bold; color:var(--accent-green);">${grandTot}</td>`;
         });
         html += '</tr>';
       });

@@ -169,10 +169,27 @@
 
     .team-select-btn { font-weight: bold; text-shadow: 1px 1px 2px #000; border: 1px solid rgba(255,255,255,0.3); }
 
+    /* Setup Team Header Cards */
+    .team-setup-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .team-setup-header {
+      padding: 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 8px;
+      text-shadow: 1px 1px 2px #000;
+    }
+
     /* Summary Table */
     .table-responsive { overflow-x: auto; margin-top: 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; }
-    th, td { border: 1px solid #333; padding: 6px 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
+    th, td { border: 1px solid #333; padding: 5px 3px; white-space: nowrap; }
     th { background: #222; color: #007bff; }
     tr:nth-child(even) { background: #181818; }
     tr.team-total-row { background: #2a2a2a; font-weight: bold; color: var(--text-light); }
@@ -183,7 +200,7 @@
   <!-- PAGE 1: MANUAL / PLAYERS VIEW -->
   <div id="page-players" class="view-page active">
     <header>
-      <h1>VoiceStatz v2.4</h1>
+      <h1>VoiceStatz v2.5</h1>
       <div>
         <button class="btn-header primary" onclick="switchPage('page-voice')">Voice Mode</button>
         <button class="btn-header" onclick="openSetup()">Edit</button>
@@ -282,11 +299,48 @@
       <button class="btn-header primary" onclick="closeSetup()">Done</button>
     </header>
 
+    <!-- Team Settings & Voice Aliases -->
     <div class="form-group">
-      <label>Team Names</label>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        <input type="text" id="home-team-name-input" class="form-control" value="Home Team" placeholder="Home Team Name">
-        <input type="text" id="away-team-name-input" class="form-control" value="Opposition" placeholder="Opposition Team Name">
+      <label>Teams & Voice Recognition Aliases</label>
+      
+      <!-- Home Team Setup Card -->
+      <div class="team-setup-card">
+        <div class="team-setup-header" id="home-setup-badge">HOME TEAM</div>
+        <input type="text" id="home-team-name-input" class="form-control" value="Home Team" placeholder="Home Team Display Name" onchange="updateSetupColorPreviews()">
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
+          <div style="display:flex; gap:2px;">
+            <input type="text" id="home-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Alias 1" onchange="saveAppState()">
+            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 1)">🎤</button>
+          </div>
+          <div style="display:flex; gap:2px;">
+            <input type="text" id="home-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Alias 2" onchange="saveAppState()">
+            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 2)">🎤</button>
+          </div>
+          <div style="display:flex; gap:2px;">
+            <input type="text" id="home-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Alias 3" onchange="saveAppState()">
+            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('home', 3)">🎤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Away Team Setup Card -->
+      <div class="team-setup-card">
+        <div class="team-setup-header" id="away-setup-badge">OPPOSITION TEAM</div>
+        <input type="text" id="away-team-name-input" class="form-control" value="Opposition" placeholder="Opposition Team Display Name" onchange="updateSetupColorPreviews()">
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
+          <div style="display:flex; gap:2px;">
+            <input type="text" id="away-alias-1" class="form-control" style="font-size:0.8rem;" placeholder="Alias 1" onchange="saveAppState()">
+            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 1)">🎤</button>
+          </div>
+          <div style="display:flex; gap:2px;">
+            <input type="text" id="away-alias-2" class="form-control" style="font-size:0.8rem;" placeholder="Alias 2" onchange="saveAppState()">
+            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 2)">🎤</button>
+          </div>
+          <div style="display:flex; gap:2px;">
+            <input type="text" id="away-alias-3" class="form-control" style="font-size:0.8rem;" placeholder="Alias 3" onchange="saveAppState()">
+            <button type="button" class="btn-header primary" style="padding:4px;" onclick="listenForTeamAlias('away', 3)">🎤</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -316,14 +370,14 @@
       <label>Team Colours (2 Colours per team)</label>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
         <div>
-          <span style="font-size:0.8rem;">Home Team (Default: Red/Blue)</span>
+          <span style="font-size:0.8rem;">Home Team</span>
           <div style="display:flex; gap:6px; margin-top:4px;">
             <input type="color" id="home-c1" class="form-control color-swatch-input" value="#dc3545" onchange="updateSetupColorPreviews()">
             <input type="color" id="home-c2" class="form-control color-swatch-input" value="#0d6efd" onchange="updateSetupColorPreviews()">
           </div>
         </div>
         <div>
-          <span style="font-size:0.8rem;">Away Team (Default: Black)</span>
+          <span style="font-size:0.8rem;">Opposition Team</span>
           <div style="display:flex; gap:6px; margin-top:4px;">
             <input type="color" id="away-c1" class="form-control color-swatch-input" value="#121212" onchange="updateSetupColorPreviews()">
             <input type="color" id="away-c2" class="form-control color-swatch-input" value="#2a2a2a" onchange="updateSetupColorPreviews()">
@@ -386,6 +440,11 @@
       away: "Opposition"
     };
 
+    let teamAliases = {
+      home: ['', '', ''],
+      away: ['', '', '']
+    };
+
     let teamColors = {
       home: ["#dc3545", "#0d6efd"],
       away: ["#121212", "#2a2a2a"]
@@ -421,6 +480,7 @@
           players,
           customStats,
           teamNames,
+          teamAliases,
           teamColors,
           teamUnassignedStats,
           statHistory,
@@ -439,6 +499,7 @@
           if (parsed.players) players = parsed.players;
           if (parsed.customStats) customStats = parsed.customStats;
           if (parsed.teamNames) teamNames = parsed.teamNames;
+          if (parsed.teamAliases) teamAliases = parsed.teamAliases;
           if (parsed.teamColors) teamColors = parsed.teamColors;
           if (parsed.teamUnassignedStats) teamUnassignedStats = parsed.teamUnassignedStats;
           if (parsed.statHistory) statHistory = parsed.statHistory;
@@ -872,13 +933,20 @@
 
       const homeNameClean = teamNames.home.toLowerCase().trim();
       const awayNameClean = teamNames.away.toLowerCase().trim();
+      
+      const homeAliasesClean = (teamAliases.home || []).map(a => a.toLowerCase().trim()).filter(a => a !== '');
+      const awayAliasesClean = (teamAliases.away || []).map(a => a.toLowerCase().trim()).filter(a => a !== '');
 
-      if (clean.includes('home') || clean.includes(homeNameClean)) {
+      // A. Home Team Match
+      if (clean.includes('home') || clean.includes(homeNameClean) || homeAliasesClean.some(a => clean.includes(a))) {
         matchedTarget = { type: 'team', id: 'home' };
-      } else if (clean.includes('away') || clean.includes('opposition') || clean.includes(awayNameClean)) {
+      } 
+      // B. Away Team Match
+      else if (clean.includes('away') || clean.includes('opposition') || clean.includes(awayNameClean) || awayAliasesClean.some(a => clean.includes(a))) {
         matchedTarget = { type: 'team', id: 'away' };
       }
 
+      // C. Player Match
       if (!matchedTarget) {
         const sortedRoster = [...players].sort((a, b) => {
           const lenA = Math.max(a.name.length, (a.alias1 || '').length, (a.alias2 || '').length, (a.alias3 || '').length);
@@ -904,6 +972,7 @@
         }
       }
 
+      // D. Number Match
       if (!matchedTarget) {
         const numbersInSpeech = clean.match(/\b\d+\b/g);
         if (numbersInSpeech) {
@@ -1002,6 +1071,17 @@
       document.getElementById('home-team-name-input').value = teamNames.home;
       document.getElementById('away-team-name-input').value = teamNames.away;
 
+      if (!teamAliases.home) teamAliases.home = ['', '', ''];
+      if (!teamAliases.away) teamAliases.away = ['', '', ''];
+
+      document.getElementById('home-alias-1').value = teamAliases.home[0] || '';
+      document.getElementById('home-alias-2').value = teamAliases.home[1] || '';
+      document.getElementById('home-alias-3').value = teamAliases.home[2] || '';
+
+      document.getElementById('away-alias-1').value = teamAliases.away[0] || '';
+      document.getElementById('away-alias-2').value = teamAliases.away[1] || '';
+      document.getElementById('away-alias-3').value = teamAliases.away[2] || '';
+
       customStats.forEach((st, idx) => {
         document.getElementById(`custom-stat-${idx}`).value = st;
       });
@@ -1015,6 +1095,40 @@
       updateSetupColorPreviews();
 
       document.getElementById('setup-modal').classList.add('active');
+    }
+
+    function listenForTeamAlias(teamKey, aliasSlot) {
+      if (!SpeechRecognition) {
+        alert("Speech recognition not supported on this browser.");
+        return;
+      }
+
+      const inputId = `${teamKey}-alias-${aliasSlot}`;
+      const aliasInput = document.getElementById(inputId);
+      aliasInput.placeholder = "Listening...";
+      aliasInput.value = "";
+
+      const tempRec = new SpeechRecognition();
+      tempRec.lang = 'en-AU';
+      tempRec.interimResults = false;
+
+      tempRec.onresult = (e) => {
+        const spokenName = e.results[0][0].transcript.toLowerCase().trim();
+        if (!teamAliases[teamKey]) teamAliases[teamKey] = ['', '', ''];
+        teamAliases[teamKey][aliasSlot - 1] = spokenName;
+
+        aliasInput.value = spokenName;
+        aliasInput.placeholder = `Alias ${aliasSlot}`;
+        saveAppState();
+        playTone('success');
+      };
+
+      tempRec.onerror = () => {
+        aliasInput.placeholder = "Error! Retry";
+        playTone('error');
+      };
+
+      tempRec.start();
     }
 
     function renderRosterEditor() {
@@ -1038,7 +1152,7 @@
             <input type="number" class="form-control" value="${p.number}" onchange="players[${idx}].number = parseInt(this.value) || 0; saveAppState();">
             <input type="text" class="form-control" value="${p.name}" placeholder="Display Name" onchange="players[${idx}].name = this.value; saveAppState();">
             <button type="button" class="form-control team-select-btn" id="team-btn-${idx}" style="background-color: ${currentBg}; color: #fff;" onclick="togglePlayerTeam(${idx})">
-              ${p.team.toUpperCase()}
+              ${p.team === 'home' ? teamNames.home.substring(0, 8).toUpperCase() : teamNames.away.substring(0, 8).toUpperCase()}
             </button>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 40px; gap: 6px; align-items: center;">
@@ -1127,29 +1241,53 @@
     function togglePlayerTeam(idx) {
       players[idx].team = players[idx].team === 'home' ? 'away' : 'home';
       saveAppState();
-      const homeColor = document.getElementById('home-c1').value;
-      const awayColor = document.getElementById('away-c1').value;
-      const btn = document.getElementById(`team-btn-${idx}`);
-      btn.innerText = players[idx].team.toUpperCase();
-      btn.style.backgroundColor = players[idx].team === 'home' ? homeColor : awayColor;
+      updateSetupColorPreviews();
     }
 
     function updateSetupColorPreviews() {
       teamColors.home = [document.getElementById('home-c1').value, document.getElementById('home-c2').value];
       teamColors.away = [document.getElementById('away-c1').value, document.getElementById('away-c2').value];
-      saveAppState();
+      
+      const homeName = document.getElementById('home-team-name-input').value || "Home Team";
+      const awayName = document.getElementById('away-team-name-input').value || "Opposition";
+
+      const homeBadge = document.getElementById('home-setup-badge');
+      const awayBadge = document.getElementById('away-setup-badge');
+
+      if (homeBadge) {
+        homeBadge.style.backgroundColor = teamColors.home[0];
+        homeBadge.innerText = homeName.toUpperCase();
+      }
+      if (awayBadge) {
+        awayBadge.style.backgroundColor = teamColors.away[0];
+        awayBadge.innerText = awayName.toUpperCase();
+      }
 
       players.forEach((p, idx) => {
         const btn = document.getElementById(`team-btn-${idx}`);
         if (btn) {
           btn.style.backgroundColor = p.team === 'home' ? teamColors.home[0] : teamColors.away[0];
+          btn.innerText = p.team === 'home' ? homeName.substring(0, 8).toUpperCase() : awayName.substring(0, 8).toUpperCase();
         }
       });
+      saveAppState();
     }
 
     function closeSetup() {
       teamNames.home = document.getElementById('home-team-name-input').value || "Home Team";
       teamNames.away = document.getElementById('away-team-name-input').value || "Opposition";
+
+      teamAliases.home = [
+        document.getElementById('home-alias-1').value,
+        document.getElementById('home-alias-2').value,
+        document.getElementById('home-alias-3').value
+      ];
+
+      teamAliases.away = [
+        document.getElementById('away-alias-1').value,
+        document.getElementById('away-alias-2').value,
+        document.getElementById('away-alias-3').value
+      ];
 
       [0,1,2,3].forEach(idx => {
         customStats[idx] = document.getElementById(`custom-stat-${idx}`).value.toUpperCase() || `ST${idx+1}`;
@@ -1173,72 +1311,96 @@
     }
 
     // ==========================================
-    // SUMMARY & RESET OPTIONS
+    // SUMMARY TABLE & CSV EXPORT ENGINE
     // ==========================================
     function renderSummaryTable() {
       const table = document.getElementById('summary-table');
-      const allStatsToDisplay = [...baseStats, ...customStats];
+      const allStats = [...baseStats, ...customStats];
 
-      let html = '<thead><tr><th>#</th><th>Player / Team</th><th>Disp</th>';
-      allStatsToDisplay.forEach(s => html += '<th>' + s + '</th>');
+      let html = '<thead><tr><th>#</th><th>Player / Team</th>';
+      
+      // Header for Quarter Breakdown & Totals
+      allStats.forEach(s => {
+        html += `<th colspan="5" style="border-left: 2px solid #555;">${s}</th>`;
+      });
+      html += '</tr><tr><th></th><th></th>';
+
+      allStats.forEach(() => {
+        html += '<th style="border-left: 2px solid #555;">Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th style="font-weight:bold; color:#0d6efd;">TOT</th>';
+      });
+
       html += '</tr></thead><tbody>';
 
-      const teams = ['home', 'away'];
-
-      teams.forEach(tKey => {
+      ['home', 'away'].forEach(tKey => {
         const teamPlayers = players.filter(p => p.team === tKey);
 
-        let teamTotK = 0, teamTotH = 0;
-        let teamStatTotals = {};
-        allStatsToDisplay.forEach(s => teamStatTotals[s] = 0);
+        let teamQStats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} };
+        allStats.forEach(s => {
+          [1,2,3,4].forEach(q => teamQStats[`Q${q}`][s] = 0);
+        });
 
+        // 1. Player Rows
         teamPlayers.forEach(p => {
-          let totK = 0, totH = 0;
-          let statTotals = {};
-          allStatsToDisplay.forEach(s => statTotals[s] = 0);
+          html += `<tr><td>${p.number}</td><td style="text-align:left;">${p.name}</td>`;
 
-          [1,2,3,4].forEach(q => {
-            const qs = p.stats[`Q${q}`] || {};
-            totK += qs.K || 0;
-            totH += qs.H || 0;
-            allStatsToDisplay.forEach(s => statTotals[s] += (qs[s] || 0));
+          allStats.forEach(s => {
+            let pTot = 0;
+            html += `<td style="border-left: 2px solid #555;">${p.stats.Q1[s] || 0}</td>`;
+            html += `<td>${p.stats.Q2[s] || 0}</td>`;
+            html += `<td>${p.stats.Q3[s] || 0}</td>`;
+            html += `<td>${p.stats.Q4[s] || 0}</td>`;
+
+            [1,2,3,4].forEach(q => {
+              const val = p.stats[`Q${q}`][s] || 0;
+              pTot += val;
+              teamQStats[`Q${q}`][s] += val;
+            });
+
+            html += `<td style="font-weight:bold; color:#0d6efd;">${pTot}</td>`;
           });
-
-          const disposals = totK + totH;
-          teamTotK += totK;
-          teamTotH += totH;
-          allStatsToDisplay.forEach(s => teamStatTotals[s] += statTotals[s]);
-
-          html += '<tr><td>' + p.number + '</td><td style="text-align:left;">' + p.name + '</td><td><strong>' + disposals + '</strong></td>';
-          allStatsToDisplay.forEach(s => html += '<td>' + statTotals[s] + '</td>');
           html += '</tr>';
         });
 
-        let unassignedTotK = 0, unassignedTotH = 0;
-        let unassignedStatTotals = {};
-        allStatsToDisplay.forEach(s => unassignedStatTotals[s] = 0);
-
-        [1,2,3,4].forEach(q => {
-          const uQs = (teamUnassignedStats[tKey] && teamUnassignedStats[tKey][`Q${q}`]) || {};
-          unassignedTotK += uQs.K || 0;
-          unassignedTotH += uQs.H || 0;
-          allStatsToDisplay.forEach(s => unassignedStatTotals[s] += (uQs[s] || 0));
+        // 2. Team Unassigned Row
+        let unassignedRowHasData = false;
+        let unassignedQStats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} };
+        allStats.forEach(s => {
+          [1,2,3,4].forEach(q => {
+            const val = (teamUnassignedStats[tKey] && teamUnassignedStats[tKey][`Q${q}`] && teamUnassignedStats[tKey][`Q${q}`][s]) || 0;
+            unassignedQStats[`Q${q}`][s] = val;
+            if (val > 0) unassignedRowHasData = true;
+          });
         });
 
-        const unassignedDisposals = unassignedTotK + unassignedTotH;
-        if (unassignedDisposals > 0 || Object.values(unassignedStatTotals).some(v => v > 0)) {
-          teamTotK += unassignedTotK;
-          teamTotH += unassignedTotH;
-          allStatsToDisplay.forEach(s => teamStatTotals[s] += unassignedStatTotals[s]);
-
-          html += '<tr style="color:#aaa; font-style:italic;"><td>-</td><td style="text-align:left;">[' + teamNames[tKey] + ' Unassigned]</td><td>' + unassignedDisposals + '</td>';
-          allStatsToDisplay.forEach(s => html += '<td>' + unassignedStatTotals[s] + '</td>');
+        if (unassignedRowHasData) {
+          html += `<tr style="color:#aaa; font-style:italic;"><td>-</td><td style="text-align:left;">[${teamNames[tKey]} Unassigned]</td>`;
+          allStats.forEach(s => {
+            let uTot = 0;
+            [1,2,3,4].forEach(q => {
+              const val = unassignedQStats[`Q${q}`][s];
+              uTot += val;
+              teamQStats[`Q${q}`][s] += val;
+            });
+            html += `<td style="border-left: 2px solid #555;">${unassignedQStats.Q1[s]}</td>`;
+            html += `<td>${unassignedQStats.Q2[s]}</td>`;
+            html += `<td>${unassignedQStats.Q3[s]}</td>`;
+            html += `<td>${unassignedQStats.Q4[s]}</td>`;
+            html += `<td style="font-weight:bold;">${uTot}</td>`;
+          });
           html += '</tr>';
         }
 
-        const teamDisposals = teamTotK + teamTotH;
-        html += '<tr class="team-total-row"><td colspan="2" style="text-align:left;">TOTAL (' + teamNames[tKey].toUpperCase() + ')</td><td>' + teamDisposals + '</td>';
-        allStatsToDisplay.forEach(s => html += '<td>' + teamStatTotals[s] + '</td>');
+        // 3. Team Total Row
+        html += `<tr class="team-total-row"><td colspan="2" style="text-align:left;">TOTAL (${teamNames[tKey].toUpperCase()})</td>`;
+        allStats.forEach(s => {
+          let grandTot = 0;
+          [1,2,3,4].forEach(q => grandTot += teamQStats[`Q${q}`][s]);
+          html += `<td style="border-left: 2px solid #555;">${teamQStats.Q1[s]}</td>`;
+          html += `<td>${teamQStats.Q2[s]}</td>`;
+          html += `<td>${teamQStats.Q3[s]}</td>`;
+          html += `<td>${teamQStats.Q4[s]}</td>`;
+          html += `<td style="font-weight:bold; color:#0d6efd;">${grandTot}</td>`;
+        });
         html += '</tr>';
       });
 
@@ -1247,48 +1409,77 @@
     }
 
     function exportCSV() {
-      const allStatsToDisplay = [...baseStats, ...customStats];
-      let csv = "Number,Name,Team,Disposals," + allStatsToDisplay.join(",") + "\n";
-
-      players.forEach(p => {
-        let totK = 0, totH = 0;
-        let statTotals = {};
-        allStatsToDisplay.forEach(s => statTotals[s] = 0);
-
-        [1,2,3,4].forEach(q => {
-          const qs = p.stats[`Q${q}`] || {};
-          totK += qs.K || 0;
-          totH += qs.H || 0;
-          allStatsToDisplay.forEach(s => statTotals[s] += (qs[s] || 0));
-        });
-
-        const disposals = totK + totH;
-        csv += p.number + ',"' + p.name + '",' + p.team + ',' + disposals + ',' + allStatsToDisplay.map(s => statTotals[s]).join(",") + "\n";
+      const allStats = [...baseStats, ...customStats];
+      
+      let csv = "Number,Name,Team";
+      allStats.forEach(s => {
+        csv += `,${s}_Q1,${s}_Q2,${s}_Q3,${s}_Q4,${s}_TOTAL`;
       });
+      csv += "\n";
 
       ['home', 'away'].forEach(tKey => {
-        let uTotK = 0, uTotH = 0;
-        let uStatTotals = {};
-        allStatsToDisplay.forEach(s => uStatTotals[s] = 0);
+        const teamPlayers = players.filter(p => p.team === tKey);
 
-        [1,2,3,4].forEach(q => {
-          const uQs = (teamUnassignedStats[tKey] && teamUnassignedStats[tKey][`Q${q}`]) || {};
-          uTotK += uQs.K || 0;
-          uTotH += uQs.H || 0;
-          allStatsToDisplay.forEach(s => uStatTotals[s] += (uQs[s] || 0));
+        let teamQStats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} };
+        allStats.forEach(s => {
+          [1,2,3,4].forEach(q => teamQStats[`Q${q}`][s] = 0);
         });
 
-        const uDisposals = uTotK + uTotH;
-        if (uDisposals > 0 || Object.values(uStatTotals).some(v => v > 0)) {
-          csv += '-,"' + teamNames[tKey] + ' Unassigned",' + tKey + ',' + uDisposals + ',' + allStatsToDisplay.map(s => uStatTotals[s]).join(",") + "\n";
+        // Player Rows
+        teamPlayers.forEach(p => {
+          csv += `${p.number},"${p.name}",${p.team}`;
+          allStats.forEach(s => {
+            let pTot = 0;
+            [1,2,3,4].forEach(q => {
+              const val = p.stats[`Q${q}`][s] || 0;
+              pTot += val;
+              teamQStats[`Q${q}`][s] += val;
+            });
+            csv += `,${p.stats.Q1[s] || 0},${p.stats.Q2[s] || 0},${p.stats.Q3[s] || 0},${p.stats.Q4[s] || 0},${pTot}`;
+          });
+          csv += "\n";
+        });
+
+        // Team Unassigned Row
+        let unassignedQStats = { Q1: {}, Q2: {}, Q3: {}, Q4: {} };
+        let hasUnassigned = false;
+        allStats.forEach(s => {
+          [1,2,3,4].forEach(q => {
+            const val = (teamUnassignedStats[tKey] && teamUnassignedStats[tKey][`Q${q}`] && teamUnassignedStats[tKey][`Q${q}`][s]) || 0;
+            unassignedQStats[`Q${q}`][s] = val;
+            if (val > 0) hasUnassigned = true;
+          });
+        });
+
+        if (hasUnassigned) {
+          csv += `-,"${teamNames[tKey]} Unassigned",${tKey}`;
+          allStats.forEach(s => {
+            let uTot = 0;
+            [1,2,3,4].forEach(q => {
+              const val = unassignedQStats[`Q${q}`][s];
+              uTot += val;
+              teamQStats[`Q${q}`][s] += val;
+            });
+            csv += `,${unassignedQStats.Q1[s]},${unassignedQStats.Q2[s]},${unassignedQStats.Q3[s]},${unassignedQStats.Q4[s]},${uTot}`;
+          });
+          csv += "\n";
         }
+
+        // Team Total Row
+        csv += `-,"TOTAL ${teamNames[tKey].toUpperCase()}",${tKey}`;
+        allStats.forEach(s => {
+          let grandTot = 0;
+          [1,2,3,4].forEach(q => grandTot += teamQStats[`Q${q}`][s]);
+          csv += `,${teamQStats.Q1[s]},${teamQStats.Q2[s]},${teamQStats.Q3[s]},${teamQStats.Q4[s]},${grandTot}`;
+        });
+        csv += "\n";
       });
 
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = "VoiceStatz_Export.csv";
+      a.download = "VoiceStatz_Match_Summary.csv";
       a.click();
     }
 
@@ -1317,6 +1508,7 @@
         voiceFeedHistory = [];
         customStats = ["INSIDE 50", "TURNOVER", "CLEARANCE", "SHOT"];
         teamNames = { home: "Home Team", away: "Opposition" };
+        teamAliases = { home: ['', '', ''], away: ['', '', ''] };
         teamColors = { home: ["#dc3545", "#0d6efd"], away: ["#121212", "#2a2a2a"] };
         localStorage.removeItem('voicestatz_state');
         alert("Full reset complete. Stats and roster restored to defaults.");
